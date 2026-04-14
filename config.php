@@ -174,55 +174,92 @@ function ensure_medical_examinations_schema(PDO $pdo): void
         return;
     }
 
-    if (!table_exists($pdo, 'medical_examinations')) {
-        $checked = true;
-        return;
-    }
-
-    $hasRecordStatus = column_exists($pdo, 'medical_examinations', 'record_status');
-    $hasCurrentContainer = column_exists($pdo, 'medical_examinations', 'current_container');
-    $hasDataStatus = column_exists($pdo, 'medical_examinations', 'data_status');
-
-    if (!$hasRecordStatus) {
-        $pdo->exec(
-            "ALTER TABLE medical_examinations
-             ADD COLUMN record_status ENUM('draft','partial','completed','submitted') DEFAULT 'draft'"
-        );
-        $hasRecordStatus = true;
-    }
-
-    if (!$hasCurrentContainer) {
-        $pdo->exec(
-            'ALTER TABLE medical_examinations
-             ADD COLUMN current_container INT DEFAULT 1'
-        );
-        $hasCurrentContainer = true;
-    }
-
-    if ($hasRecordStatus && $hasDataStatus) {
-        $pdo->exec(
-            "UPDATE medical_examinations
-             SET record_status = CASE
-                 WHEN data_status = 'verified' THEN 'submitted'
-                 WHEN data_status = 'completed' THEN 'completed'
-                 WHEN data_status = 'draft' THEN 'draft'
-                 ELSE COALESCE(record_status, 'draft')
-             END
-             WHERE record_status IS NULL OR record_status = '' OR record_status = 'draft'"
-        );
-    }
-
-    if ($hasCurrentContainer) {
-        $pdo->exec(
-            "UPDATE medical_examinations
-             SET current_container = CASE
-                 WHEN record_status IN ('completed', 'submitted') THEN 8
-                 WHEN current_container IS NULL OR current_container < 1 THEN 1
-                 WHEN current_container > 8 THEN 8
-                 ELSE current_container
-             END"
-        );
-    }
+    // Create table if not exists
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `medical_examinations` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `clims_id` VARCHAR(100) UNIQUE,
+            `serial_no` VARCHAR(100),
+            `attested_by_eic` VARCHAR(255),
+            `exam_date` DATE,
+            `full_name` VARCHAR(255),
+            `age_sex` VARCHAR(50),
+            `aadhar_no` VARCHAR(50),
+            `address` TEXT,
+            `mobile_no` VARCHAR(20),
+            `demo_exam_date` DATE,
+            `contractor_agency` VARCHAR(255),
+            `ntpc_eic` VARCHAR(255),
+            `diabetes` VARCHAR(10),
+            `hypertension` VARCHAR(10),
+            `vertigo` VARCHAR(10),
+            `epilepsy` VARCHAR(10),
+            `height_phobia` VARCHAR(10),
+            `skin_diseases` VARCHAR(10),
+            `asthma` VARCHAR(10),
+            `alcohol_intake` VARCHAR(10),
+            `mental_illness` VARCHAR(10),
+            `tobacco_chewing` VARCHAR(10),
+            `cancer` VARCHAR(10),
+            `piles` VARCHAR(10),
+            `hearing_problem` VARCHAR(10),
+            `chronic_illness` VARCHAR(10),
+            `deformity` VARCHAR(10),
+            `past_accident` VARCHAR(10),
+            `smoking` VARCHAR(10),
+            `medicine_history` TEXT,
+            `contractor_signature` VARCHAR(255),
+            `height` DECIMAL(10,2),
+            `weight` DECIMAL(10,2),
+            `bp` VARCHAR(50),
+            `bmi` VARCHAR(20),
+            `chest_insp` VARCHAR(50),
+            `chest_exp` VARCHAR(50),
+            `pulse_spo2_temp` VARCHAR(100),
+            `pallor` VARCHAR(20),
+            `icterus` VARCHAR(20),
+            `clubbing` VARCHAR(20),
+            `built` VARCHAR(20),
+            `tongue` VARCHAR(100),
+            `teeth` VARCHAR(100),
+            `other_finding` TEXT,
+            `cardio_system` TEXT,
+            `respiratory_system` TEXT,
+            `cns` TEXT,
+            `system_other` TEXT,
+            `distant_r_with` VARCHAR(20),
+            `distant_r_without` VARCHAR(20),
+            `distant_l_with` VARCHAR(20),
+            `distant_l_without` VARCHAR(20),
+            `near_r_with` VARCHAR(20),
+            `near_r_without` VARCHAR(20),
+            `near_l_with` VARCHAR(20),
+            `near_l_without` VARCHAR(20),
+            `colour_vision` VARCHAR(100),
+            `eye_disorder` TEXT,
+            `lmp` VARCHAR(50),
+            `menstrual_cycle` VARCHAR(50),
+            `pregnancy_duration` VARCHAR(50),
+            `cbc` VARCHAR(255),
+            `random_blood_sugar` VARCHAR(50),
+            `urine_rm` VARCHAR(255),
+            `blood_group` VARCHAR(10),
+            `lft_kft` VARCHAR(255),
+            `ecg` VARCHAR(20),
+            `chest_xray` VARCHAR(20),
+            `height_pass_test` VARCHAR(20),
+            `other_tests` TEXT,
+            `opinion` VARCHAR(100),
+            `remarks` TEXT,
+            `worker_signature` VARCHAR(255),
+            `doctor_signature` VARCHAR(255),
+            `worker_photo` VARCHAR(500),
+            `record_status` ENUM('draft','partial','completed','submitted') DEFAULT 'draft',
+            `current_container` INT DEFAULT 1,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME ON UPDATE CURRENT_TIMESTAMP
+        )
+    ");
 
     $checked = true;
 }
@@ -416,38 +453,5 @@ function derive_progress_state(array $row): array
     ];
 }
 
-function extract_age(?string $ageSex): ?int
-{
-    if (!$ageSex) {
-        return null;
-    }
-
-    if (preg_match('/(\d{1,3})/', $ageSex, $matches)) {
-        return (int)$matches[1];
-    }
-
-    return null;
-}
-
-function extract_sex(?string $ageSex): ?string
-{
-    if (!$ageSex) {
-        return null;
-    }
-
-    if (preg_match('/\b(M|F|Male|Female|Other)\b/i', $ageSex, $matches)) {
-        $sex = strtolower($matches[1]);
-        if ($sex === 'm' || $sex === 'male') {
-            return 'Male';
-        }
-        if ($sex === 'f' || $sex === 'female') {
-            return 'Female';
-        }
-        return 'Other';
-    }
-
-    return null;
-}
-
 ensure_csrf_token();
-
+?>

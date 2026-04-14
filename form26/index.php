@@ -2,6 +2,15 @@
 
 require_once __DIR__ . '/../config.php';
 
+// Define the extract_age function BEFORE using it
+function extract_age($ageSex) {
+    if (empty($ageSex)) return null;
+    if (preg_match('/(\d{1,3})/', $ageSex, $matches)) {
+        return (int)$matches[1];
+    }
+    return null;
+}
+
 $csrfToken = csrf_token();
 $examId = isset($_GET['examination_id']) ? (int)$_GET['examination_id'] : (int)($_SESSION['current_examination_id'] ?? 0);
 
@@ -45,139 +54,228 @@ $defaults = [
     'surgeon_signature' => $form26['surgeon_signature'] ?? '',
 ];
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>CLIMS - Form 26</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/app.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>FORM-26 Certificate of Fitness</title>
+
+  <!-- Bootstrap 5 -->
+   <link rel="stylesheet" href="assets/css/app.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f4f6f9;
+      padding: 24px;
+      font-family: "Segoe UI", Roboto, sans-serif;
+    }
+    .form-sheet {
+      background: #fff;
+      max-width: 850px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+.header img {
+        width: 100px;
+        height: auto;
+    }
+    .dotted-input {
+      border: none;
+      border-bottom: 2px dotted #555;
+      background: transparent;
+      outline: none;
+      padding: 4px 6px;
+      width: 100%;
+    }
+    textarea.dotted-input {
+      min-height: 50px;
+      resize: vertical;
+    }
+    .section-title {
+      font-weight: 600;
+      margin: 12px 0;
+    }
+    .signature-box {
+      border: 1px dashed #aaa;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 6px;
+    }
+    .signature-box img {
+      max-height: 100px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    @media print {
+      body { background: white; }
+      .form-sheet { box-shadow: none; }
+      .btn, #uploadSignature { display: none !important; }
+    }
+  </style>
 </head>
 <body>
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-card">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p id="loadingText">Saving Form 26...</p>
+
+<div class="form-sheet">
+  <!-- Header -->
+  <div class="d-flex justify-content-between">
+    <div>
+      <div style="width:110px;height:60px;border:1px solid #aaa;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#666;">
+        <img src="NTPC_Logo.svg.png" alt="NTPC Main Logo" width="160" height="60" >
+      </div>
     </div>
+    <div class="header flex-grow-1">
+      <h5 class="mb-1">FORM 26</h5>
+      <div style="font-size:0.85rem"><h5>[Prescribed under the Schedule specified under Rule 109]</h5></div>
+      <h4 class="mt-2">Certificate of Fitness</h4>
+    </div>
+    <div class="text-end fw-bold" style="width:110px">
+      दादरी<br>DADRI
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form id="fitnessForm" class="mt-3" action="save_form.php" method="POST">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+    <input type="hidden" name="examination_id" value="<?php echo $examId; ?>">
+    
+    <div class="col-12 col-md-6">
+        <label class="item-label">1. Serial Number:</label>
+        <div class="fill-line">
+            <input class="dotted-input" type="text" name="serial" required value="<?php echo htmlspecialchars($defaults['serial_number'], ENT_QUOTES, 'UTF-8'); ?>">
+        </div>
+    </div><br>
+    
+    <p class="lh-lg">
+      I certify that I have personally examined Shri 
+      <input type="text" name="patient_name" class="dotted-input" value="<?php echo htmlspecialchars($defaults['patient_name'], ENT_QUOTES, 'UTF-8'); ?>">
+    </p>
+    
+    <div class="row mb-3">
+      <div class="col-md-6">
+        S/O <input type="text" name="father_name" class="dotted-input w-75" value="<?php echo htmlspecialchars($defaults['father_name'], ENT_QUOTES, 'UTF-8'); ?>">
+      </div>
+      <div class="col-md-6">
+        R/O <input type="text" name="address" class="dotted-input w-75" value="<?php echo htmlspecialchars($defaults['address'], ENT_QUOTES, 'UTF-8'); ?>">
+      </div>
+    </div>
+    
+    <p>
+      who is desirous of being employed in 
+      <input type="text" name="employment_details" class="dotted-input" value="<?php echo htmlspecialchars($defaults['employment_details'], ENT_QUOTES, 'UTF-8'); ?>"> 
+      as 
+      <input type="text" name="designation" class="dotted-input" value="<?php echo htmlspecialchars($defaults['designation'], ENT_QUOTES, 'UTF-8'); ?>">
+      and that his age, as nearly as can be from my examination, is  
+      <input type="text" name="age" class="dotted-input" value="<?php echo htmlspecialchars($defaults['age'], ENT_QUOTES, 'UTF-8'); ?>"> 
+      Years, and he is, in my 
+      <select name="fitness_status">
+        <option value="">Select</option>
+        <option value="Fit" <?php echo ($defaults['fitness_status'] == 'Fit') ? 'selected' : ''; ?>>Fit</option>
+        <option value="Unfit" <?php echo ($defaults['fitness_status'] == 'Unfit') ? 'selected' : ''; ?>>Unfit</option>
+        <option value="Temporarily unfit" <?php echo ($defaults['fitness_status'] == 'Temporarily unfit') ? 'selected' : ''; ?>>Temporarily unfit</option>
+      </select> 
+      for employment in the above mentioned factory as mentioned below.
+    </p>
+
+    <div class="mb-3">
+      <label class="fw-semibold">2.</label>
+      He may be produced for further examination after a period of 
+      <input type="text" name="further_exam_period" class="dotted-input" value="<?php echo htmlspecialchars($defaults['further_exam_period'], ENT_QUOTES, 'UTF-8'); ?>">
+    </div>
+
+    <div class="mb-3">
+      <label class="fw-semibold">3.</label>
+      The serial number of the previous certificate is 
+      <input type="text" name="previous_certificate_no" class="dotted-input" value="<?php echo htmlspecialchars($defaults['previous_certificate_no'], ENT_QUOTES, 'UTF-8'); ?>">
+    </div>
+
+    <!-- Signature -->
+    <div class="row mt-4">
+      <div class="col-md-6"></div>
+      <div class="col-md-6 text-end">
+        <div class="fw-semibold">Signature of certifying surgeon</div>
+        <div class="signature-box mt-2" id="signaturePreview">
+          <span class="text-muted"><?php echo htmlspecialchars($defaults['surgeon_signature'] ?: 'No signature uploaded', ENT_QUOTES, 'UTF-8'); ?></span>
+        </div>
+        <input type="text" name="surgeon_signature" id="surgeon_signature" class="form-control mt-2" value="<?php echo htmlspecialchars($defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>">
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 justify-content-end mt-4">
+      <button type="reset" class="btn btn-outline-secondary">Reset</button>
+      <button type="button" id="previewBtn" class="btn btn-primary">Preview / Print</button>
+      <button type="submit" class="btn btn-success">Save</button>
+      <button type="button" id="nextBtn" class="btn btn-info">Next</button>
+    </div>
+  </form>
+
+  <div id="message" class="mt-3" style="display:none;"></div>
 </div>
 
-<div class="toast-container" id="toastContainer"></div>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<div class="page-shell" style="max-width: 1100px;">
-    <div class="page-head">
-        <h1><i class="fa-solid fa-file-medical me-2"></i>Form 26 - Fitness Certificate</h1>
-        <p>Corporate Medical Cell Information Management System (CLIMS)</p>
-    </div>
-
-    <?php if ($error): ?>
-        <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
-        <a class="btn btn-outline-soft" href="../index.php">Back To Main Form</a>
-    <?php else: ?>
-        <form id="form26Form" autocomplete="off" novalidate>
-            <input autocomplete="off" id="csrf_token" type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-            <input autocomplete="off" id="examination_id" type="hidden" name="examination_id" value="<?php echo (int)$examId; ?>">
-            <input autocomplete="off" type="hidden" name="form26_id" id="form26_id" value="<?php echo (int)($form26['id'] ?? 0); ?>">
-
-            <section class="clims-section">
-                <div class="section-head">
-                    <h2 class="section-title"><i class="fa-solid fa-user-check"></i>Certificate Details</h2>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label" for="serial_number">Serial Number</label>
-                        <input autocomplete="off" id="serial_number" type="text" class="form-control" name="serial_number" value="<?php echo htmlspecialchars((string)$defaults['serial_number'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="patient_name">Patient Name <span class="text-danger">*</span></label>
-                        <input autocomplete="name" id="patient_name" type="text" class="form-control" name="patient_name" value="<?php echo htmlspecialchars((string)$defaults['patient_name'], ENT_QUOTES, 'UTF-8'); ?>" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="father_name">Father Name</label>
-                        <input autocomplete="name" id="father_name" type="text" class="form-control" name="father_name" value="<?php echo htmlspecialchars((string)$defaults['father_name'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-
-                    <div class="col-md-8">
-                        <label class="form-label" for="address">Address</label>
-                        <textarea autocomplete="street-address" id="address" class="form-control" rows="2" name="address"><?php echo htmlspecialchars((string)$defaults['address'], ENT_QUOTES, 'UTF-8'); ?></textarea>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="age">Age</label>
-                        <input autocomplete="off" id="age" type="number" class="form-control" name="age" value="<?php echo htmlspecialchars((string)$defaults['age'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label" for="employment_details">Employment Details</label>
-                        <input autocomplete="off" id="employment_details" type="text" class="form-control" name="employment_details" value="<?php echo htmlspecialchars((string)$defaults['employment_details'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="designation">Designation</label>
-                        <input autocomplete="off" id="designation" type="text" class="form-control" name="designation" value="<?php echo htmlspecialchars((string)$defaults['designation'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label" for="fitness_status">Fitness Status <span class="text-danger">*</span></label>
-                        <select autocomplete="off" id="fitness_status" class="form-select" name="fitness_status" required>
-                            <option value="">Select</option>
-                            <?php
-                            $fitnessOptions = ['MEDICALLY FIT', 'UNFIT', 'TEMPORARILY UNFIT', 'CONDITIONALLY FIT'];
-                            foreach ($fitnessOptions as $option):
-                                $selected = ((string)$defaults['fitness_status'] === $option) ? 'selected' : '';
-                            ?>
-                                <option value="<?php echo htmlspecialchars($option, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $selected; ?>>
-                                    <?php echo htmlspecialchars($option, ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="further_exam_period">Further Examination Period</label>
-                        <input autocomplete="off" id="further_exam_period" type="text" class="form-control" name="further_exam_period" value="<?php echo htmlspecialchars((string)$defaults['further_exam_period'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="previous_certificate_no">Previous Certificate No.</label>
-                        <input autocomplete="off" id="previous_certificate_no" type="text" class="form-control" name="previous_certificate_no" value="<?php echo htmlspecialchars((string)$defaults['previous_certificate_no'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label" for="surgeon_signature">Certifying Surgeon Signature</label>
-                        <input autocomplete="off" id="surgeon_signature" type="text" class="form-control" name="surgeon_signature" value="<?php echo htmlspecialchars((string)$defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>">
-                    </div>
-                </div>
-            </section>
-
-            <div class="footer-actions d-flex justify-content-center gap-2">
-                <button type="button" class="btn btn-gradient btn-pill" id="saveForm26Btn">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>
-                    <?php echo $isEditMode ? 'Save Changes and Open Form 27' : 'Submit'; ?>
-                </button>
-                <?php if ($isEditMode): ?>
-                    <a class="btn btn-outline-soft" id="nextToForm27" href="../form27/index.php?examination_id=<?php echo (int)$examId; ?>">
-                        <i class="fa-solid fa-arrow-right me-1"></i>Skip to Form 27
-                    </a>
-                <?php endif; ?>
-                <a href="../index.php" class="btn btn-outline-secondary btn-pill">
-                    <i class="fa-solid fa-arrow-left me-1"></i>Back to CLIMS
-                </a>
-            </div>
-        </form>
-    <?php endif; ?>
-</div>
-
-<?php if (!$error): ?>
 <script>
-window.FORM26_APP = {
-    saveUrl: 'save_form26.php'
-};
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("fitnessForm");
+  const msg = document.getElementById("message");
+
+  // Form submit with AJAX
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    
+    fetch('save_form26.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success) {
+        alert('✅ ' + data.message);
+        // Update signature preview
+        const surgeonSignature = document.getElementById('surgeon_signature').value;
+        if(surgeonSignature) {
+          document.getElementById('signaturePreview').innerHTML = '<span>' + surgeonSignature + '</span>';
+        }
+      } else {
+        alert('❌ Error: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Error: ' + error.message);
+    });
+  });
+
+  // Reset button clears preview
+  document.querySelector("button[type='reset']").addEventListener("click", () => {
+    document.getElementById("signaturePreview").innerHTML = 
+      '<span class="text-muted">No signature uploaded</span>';
+  });
+
+  // Next button (redirect to Form-27)
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    window.location.href = "../27/index.php";  
+  });
+
+  // Preview button
+  document.getElementById("previewBtn").addEventListener("click", () => {
+    window.print();
+  });
+});
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/form26.js"></script>
-<?php endif; ?>
+
 </body>
 </html>
-
-
-
