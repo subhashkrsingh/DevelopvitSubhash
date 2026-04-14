@@ -236,17 +236,168 @@
         }
 
         const step = Number(section.dataset.step || containerId.replace(/\D/g, '')) || 0;
-        const isEditing = !section.classList.contains('editing');
-        const editButton = section.querySelector('.container-edit-btn');
+        const editBtn = section.querySelector('.edit-btn');
+        const saveBtn = section.querySelector('.save-btn');
+        const cancelBtn = section.querySelector('.cancel-btn');
 
-        setSectionEditable(step, isEditing);
-        section.classList.toggle('editing', isEditing);
+        if (!editBtn || !saveBtn || !cancelBtn) {
+            return;
+        }
 
-        if (editButton) {
-            editButton.classList.toggle('active', isEditing);
-            editButton.innerHTML = isEditing ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-pencil"></i>';
-            editButton.setAttribute('aria-label', isEditing ? 'Disable editing for this container' : 'Enable editing for this container');
-            editButton.setAttribute('title', isEditing ? 'Disable editing' : 'Edit section');
+        // Store original values for cancel functionality
+        storeOriginalValues(step);
+
+        // Enable editing
+        setSectionEditable(step, true);
+        section.classList.add('editing');
+
+        // Toggle button visibility
+        editBtn.classList.add('d-none');
+        saveBtn.classList.remove('d-none');
+        cancelBtn.classList.remove('d-none');
+    }
+
+    async function saveSection(containerId) {
+        const section = document.getElementById(containerId);
+        if (!section) {
+            return;
+        }
+
+        const step = Number(section.dataset.step || containerId.replace(/\D/g, '')) || 0;
+
+        if (!validateContainer(step)) {
+            return;
+        }
+
+        const editBtn = section.querySelector('.edit-btn');
+        const saveBtn = section.querySelector('.save-btn');
+        const cancelBtn = section.querySelector('.cancel-btn');
+
+        if (!editBtn || !saveBtn || !cancelBtn) {
+            return;
+        }
+
+        // Save the data
+        const payload = buildContainerPayload(step);
+        setLoading(true, 'Saving section...');
+
+        try {
+            const response = await fetch(app.saveUrl, {
+                method: 'POST',
+                body: payload
+            });
+            const data = await parseJsonResponse(response);
+
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to save section.');
+            }
+
+            // Update examination_id if it's a new record
+            if (data.id && !examIdInput.value) {
+                examIdInput.value = String(data.id);
+            }
+
+            // Disable editing
+            setSectionEditable(step, false);
+            section.classList.remove('editing');
+
+            // Clear stored original values
+            clearOriginalValues(step);
+
+            // Toggle button visibility
+            editBtn.classList.remove('d-none');
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+
+            showToast('Section saved successfully.', 'success');
+        } catch (error) {
+            showToast(error.message || 'Unable to save section.', 'danger');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function cancelSection(containerId) {
+        const section = document.getElementById(containerId);
+        if (!section) {
+            return;
+        }
+
+        const step = Number(section.dataset.step || containerId.replace(/\D/g, '')) || 0;
+        const editBtn = section.querySelector('.edit-btn');
+        const saveBtn = section.querySelector('.save-btn');
+        const cancelBtn = section.querySelector('.cancel-btn');
+
+        if (!editBtn || !saveBtn || !cancelBtn) {
+            return;
+        }
+
+        // Restore original values
+        restoreOriginalValues(step);
+
+        // Disable editing
+        setSectionEditable(step, false);
+        section.classList.remove('editing');
+
+        // Clear stored original values
+        clearOriginalValues(step);
+
+        // Toggle button visibility
+        editBtn.classList.remove('d-none');
+        saveBtn.classList.add('d-none');
+        cancelBtn.classList.add('d-none');
+    }
+
+    function storeOriginalValues(step) {
+        const fields = fieldMap[step] || [];
+        const originals = {};
+
+        fields.forEach(field => {
+            const elements = form.querySelectorAll(`[name="${field}"]`);
+            if (elements.length > 0) {
+                if (elements[0].type === 'radio') {
+                    const checked = Array.from(elements).find(el => el.checked);
+                    originals[field] = checked ? checked.value : '';
+                } else if (elements[0].type === 'checkbox') {
+                    originals[field] = Array.from(elements).filter(el => el.checked).map(el => el.value);
+                } else {
+                    originals[field] = elements[0].value;
+                }
+            }
+        });
+
+        // Store in a global object
+        if (!window.originalValues) {
+            window.originalValues = {};
+        }
+        window.originalValues[step] = originals;
+    }
+
+    function restoreOriginalValues(step) {
+        const originals = window.originalValues && window.originalValues[step];
+        if (!originals) return;
+
+        Object.entries(originals).forEach(([field, value]) => {
+            const elements = form.querySelectorAll(`[name="${field}"]`);
+            if (elements.length > 0) {
+                if (elements[0].type === 'radio') {
+                    elements.forEach(el => {
+                        el.checked = el.value === value;
+                    });
+                } else if (elements[0].type === 'checkbox') {
+                    elements.forEach(el => {
+                        el.checked = value.includes(el.value);
+                    });
+                } else {
+                    elements[0].value = value;
+                }
+            }
+        });
+    }
+
+    function clearOriginalValues(step) {
+        if (window.originalValues) {
+            delete window.originalValues[step];
         }
     }
 
@@ -689,6 +840,8 @@
             showToast(data.message || 'Submitted successfully. Redirecting...', 'success');
 
             const redirectUrl = data.redirect_url || (app.form26Url + '?examination_id=' + encodeURIComponent(data.id || examId));
+            // Store examination ID in session for Form 26
+            sessionStorage.setItem('current_examination_id', data.id || examId);
             window.setTimeout(() => {
                 window.location.href = redirectUrl;
             }, 900);
@@ -750,6 +903,24 @@
     saveAllChangesBtn.addEventListener('click', saveAllChanges);
 
         submitForm26Btn.addEventListener('click', submitToForm26);
+
+        // Event delegation for per-container edit buttons
+        document.addEventListener('click', (event) => {
+            const target = event.target.closest('.edit-btn, .save-btn, .cancel-btn');
+            if (!target) return;
+
+            event.preventDefault();
+            const containerId = target.getAttribute('data-target');
+            if (!containerId) return;
+
+            if (target.classList.contains('edit-btn')) {
+                toggleEdit(containerId);
+            } else if (target.classList.contains('save-btn')) {
+                saveSection(containerId);
+            } else if (target.classList.contains('cancel-btn')) {
+                cancelSection(containerId);
+            }
+        });
 
         window.toggleEdit = toggleEdit;
         window.searchPatient = searchRecord;

@@ -9,6 +9,9 @@ $exam = null;
 $form26 = null;
 $error = null;
 
+// Determine if this is edit mode (Form 26 already exists)
+$isEditMode = false;
+
 if ($examId <= 0) {
     $error = 'Missing examination ID. Please complete the CLIMS form first.';
 } else {
@@ -21,6 +24,7 @@ if ($examId <= 0) {
             $stmt = $pdo->prepare('SELECT * FROM form26 WHERE examination_id = :id ORDER BY id DESC LIMIT 1');
             $stmt->execute([':id' => $examId]);
             $form26 = $stmt->fetch() ?: null;
+            $isEditMode = $form26 !== null;
         }
     } catch (Throwable $e) {
         $error = APP_DEBUG ? $e->getMessage() : 'Unable to load Form 26.';
@@ -88,8 +92,8 @@ $defaults = [
                         <input autocomplete="off" id="serial_number" type="text" class="form-control" name="serial_number" value="<?php echo htmlspecialchars((string)$defaults['serial_number'], ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label" for="patient_name">Patient Name</label>
-                        <input autocomplete="name" id="patient_name" type="text" class="form-control" name="patient_name" value="<?php echo htmlspecialchars((string)$defaults['patient_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                        <label class="form-label" for="patient_name">Patient Name <span class="text-danger">*</span></label>
+                        <input autocomplete="name" id="patient_name" type="text" class="form-control" name="patient_name" value="<?php echo htmlspecialchars((string)$defaults['patient_name'], ENT_QUOTES, 'UTF-8'); ?>" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label" for="father_name">Father Name</label>
@@ -115,8 +119,8 @@ $defaults = [
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label" for="fitness_status">Fitness Status</label>
-                        <select autocomplete="off" id="fitness_status" class="form-select" name="fitness_status">
+                        <label class="form-label" for="fitness_status">Fitness Status <span class="text-danger">*</span></label>
+                        <select autocomplete="off" id="fitness_status" class="form-select" name="fitness_status" required>
                             <option value="">Select</option>
                             <?php
                             $fitnessOptions = ['MEDICALLY FIT', 'UNFIT', 'TEMPORARILY UNFIT', 'CONDITIONALLY FIT'];
@@ -147,10 +151,16 @@ $defaults = [
 
             <div class="footer-actions d-flex justify-content-center gap-2">
                 <button type="button" class="btn btn-gradient btn-pill" id="saveForm26Btn">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Form 26
+                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                    <?php echo $isEditMode ? 'Save Changes and Open Form 27' : 'Submit'; ?>
                 </button>
-                <a class="btn btn-outline-soft" id="nextToForm27" href="../form27/index.php?examination_id=<?php echo (int)$examId; ?>">
-                    <i class="fa-solid fa-arrow-right me-1"></i>Next To Form 27
+                <?php if ($isEditMode): ?>
+                    <a class="btn btn-outline-soft" id="nextToForm27" href="../form27/index.php?examination_id=<?php echo (int)$examId; ?>">
+                        <i class="fa-solid fa-arrow-right me-1"></i>Skip to Form 27
+                    </a>
+                <?php endif; ?>
+                <a href="../index.php" class="btn btn-outline-secondary btn-pill">
+                    <i class="fa-solid fa-arrow-left me-1"></i>Back to CLIMS
                 </a>
             </div>
         </form>

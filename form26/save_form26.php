@@ -111,9 +111,21 @@ try {
 
     $pdo->commit();
 
-    json_response(true, 'Form 26 saved successfully.', [
+    // Determine redirect based on operation type
+    if ($existing) {
+        // This was an UPDATE - redirect to Form 27
+        $message = 'Form 26 updated successfully. Redirecting to Form 27...';
+        $redirectUrl = '../form27/index.php?examination_id=' . urlencode((string)$examId);
+    } else {
+        // This was an INSERT - redirect back to Form 26 in edit mode
+        $message = 'Form 26 saved successfully. You can now edit it before moving to Form 27.';
+        $redirectUrl = 'index.php?examination_id=' . urlencode((string)$examId);
+    }
+
+    json_response(true, $message, [
         'id' => $form26Id,
-        'redirect_url' => '../form27/index.php?examination_id=' . urlencode((string)$examId),
+        'redirect_url' => $redirectUrl,
+        'was_update' => (bool)$existing,
     ]);
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {

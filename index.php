@@ -59,8 +59,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-id-card"></i>Container 1 - Demographics</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section1')" aria-label="Edit Container 1" title="Edit Container 1">
+                    <button type="button" class="edit-btn" data-target="section1" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section1" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section1" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -129,8 +135,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-file-signature"></i>Container 2 - History / Self Declaration</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section2')" aria-label="Edit Container 2" title="Edit Container 2">
+                    <button type="button" class="edit-btn" data-target="section2" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section2" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section2" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -183,8 +195,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-heart-pulse"></i>Container 3 - General Examination</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section3')" aria-label="Edit Container 3" title="Edit Container 3">
+                    <button type="button" class="edit-btn" data-target="section3" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section3" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section3" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -225,8 +243,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-stethoscope"></i>Container 4 - Systemic Examination</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section4')" aria-label="Edit Container 4" title="Edit Container 4">
+                    <button type="button" class="edit-btn" data-target="section4" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section4" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section4" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -247,8 +271,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-eye"></i>Container 5 - Vision</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section5')" aria-label="Edit Container 5" title="Edit Container 5">
+                    <button type="button" class="edit-btn" data-target="section5" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section5" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section5" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -299,8 +329,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-venus"></i>Container 6 - For Female Workers</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section6')" aria-label="Edit Container 6" title="Edit Container 6">
+                    <button type="button" class="edit-btn" data-target="section6" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section6" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section6" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -319,8 +355,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-vials"></i>Container 7 - Investigations</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section7')" aria-label="Edit Container 7" title="Edit Container 7">
+                    <button type="button" class="edit-btn" data-target="section7" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section7" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section7" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>
@@ -351,8 +393,14 @@ $today = date('Y-m-d');
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-notes-medical"></i>Container 8 - Opinion &amp; Remarks</h2>
                 <div class="section-head-actions">
-                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section8')" aria-label="Edit Container 8" title="Edit Container 8">
+                    <button type="button" class="edit-btn" data-target="section8" title="Edit Section">
                         <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="save-btn d-none" data-target="section8" title="Save Changes">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button type="button" class="cancel-btn d-none" data-target="section8" title="Cancel Changes">
+                        <i class="bi bi-x"></i>
                     </button>
                 </div>
             </div>

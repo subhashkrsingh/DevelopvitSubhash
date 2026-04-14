@@ -48,6 +48,25 @@
     }
 
     async function saveForm26() {
+        // Basic validation
+        const requiredFields = ['patient_name', 'fitness_status'];
+        let hasErrors = false;
+
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !field.value.trim()) {
+                field.classList.add('is-invalid');
+                hasErrors = true;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (hasErrors) {
+            showToast('Please fill in all required fields.', 'warning');
+            return;
+        }
+
         setLoading(true, 'Saving Form 26...');
 
         try {
@@ -65,11 +84,16 @@
             if (data.id) {
                 form26IdInput.value = String(data.id);
             }
-            if (data.redirect_url) {
-                nextLink.href = data.redirect_url;
-            }
 
             showToast(data.message || 'Form 26 saved successfully.', 'success');
+
+            // Redirect after a short delay to show the success message
+            setTimeout(() => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                }
+            }, 1500);
+
         } catch (error) {
             showToast(error.message || 'Unable to save Form 26.', 'danger');
         } finally {
