@@ -389,7 +389,7 @@ $today = date('Y-m-d');
 window.CLIMS_APP = {
     csrfToken: <?php echo json_encode($csrfToken); ?>,
     saveUrl: 'save_examination.php',
-    lookupUrl: 'get_patient_data.php',
+    lookupUrl: 'ajax/get_patient_data.php',
     form26Url: 'form26/index.php'
 };
 </script>

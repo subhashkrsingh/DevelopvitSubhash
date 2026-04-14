@@ -647,6 +647,10 @@
                 throw new Error(data.message || 'Unable to process search.');
             }
 
+            const warningMessage = data.is_test_mode
+                ? '⚠️ TEST MODE: Using dummy CLIMS ID. This is for local testing only.'
+                : '';
+
             if (!data.found) {
                 prepareCreateMode(climsId, {
                     id: data.id || '',
@@ -665,7 +669,7 @@
             loadedSnapshot = collectSnapshot();
 
             if (data.is_test_mode) {
-                setFeedback(TEST_MODE_MESSAGE, 'warning');
+                setFeedback(warningMessage || TEST_MODE_MESSAGE, 'warning');
                 showToast('Loaded existing dummy test record.', 'warning');
             } else {
                 setFeedback('Record found for CLIMS ID: ' + climsId, 'success');
