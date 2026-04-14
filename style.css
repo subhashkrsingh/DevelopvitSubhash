@@ -1,0 +1,397 @@
+/* style.css */
+/* Medical Examination Form - Enhanced Professional Styling */
+
+/* General Reset & Body Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fc;
+    color: #2c3e50;
+    padding: 20px 15px;
+}
+
+/* Main container override for better readability */
+.container {
+    max-width: 1900px; /* Wider to accommodate large table */
+    background-color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px 25px !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* Logo Section - refined alignment */
+.logo-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e0e9f0;
+    padding-bottom: 20px;
+}
+
+.form-group.text-center {
+    flex: 1;
+    margin-bottom: 0 !important;
+    text-align: center;
+}
+
+.form-group.text-center img[alt="NTPC Small Logo"] {
+    float: none !important; /* Override inline float */
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 15px;
+    width: auto;
+    max-height: 90px;
+}
+
+.form-group.text-center center {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.form-group.text-center h3 {
+    color: #003366;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 0;
+    font-size: 1.8rem;
+    text-shadow: 1px 1px 2px rgba(0,51,102,0.1);
+}
+
+.form-group.text-center h2 {
+    color: #1e4a6b;
+    font-weight: 600;
+    margin: 5px 0 0 0;
+    font-size: 1.9rem;
+    border-bottom: 2px solid #ff8c42;
+    display: inline-block;
+    padding-bottom: 8px;
+}
+
+.logo-container img[alt="NTPC Main Logo"] {
+    max-height: 100px;
+    width: auto;
+    margin-left: auto;
+}
+
+/* S.No. and Photo Section */
+.form-group.mb-3 .text-start h5 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #003366;
+    background: #eef3f9;
+    padding: 8px 20px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.photo-box {
+    width: 220px;
+    background-color: #f9fbfd;
+    border: 2px dashed #b0c4de !important;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.photo-box:hover {
+    border-color: #ff8c42;
+    background-color: #fff6ed;
+}
+
+.photo-box p {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.photo-box p:first-child {
+    font-weight: 700;
+    color: #003366;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.photo-box input[type="file"] {
+    font-size: 0.8rem;
+    padding: 5px;
+}
+
+/* Table Styling - Critical for large data */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 51, 102, 0.1);
+    margin-top: 25px;
+}
+
+.table thead th {
+    background-color: #003366 !important;
+    color: white;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    text-align: center;
+    padding: 12px 5px;
+    border-right: 1px solid #1e4a6b;
+}
+
+.table thead th:last-child {
+    border-right: none;
+}
+
+.table tbody td {
+    background-color: white;
+    padding: 8px 5px;
+    vertical-align: middle;
+    border: 1px solid #dde2e8;
+}
+
+/* Input fields inside table */
+.table input.form-control {
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    padding: 8px 6px;
+    font-size: 0.85rem;
+    min-width: 100px;
+    transition: all 0.2s;
+}
+
+.table input.form-control:focus {
+    border-color: #ff8c42;
+    box-shadow: 0 0 0 3px rgba(255,140,66,0.2);
+}
+
+/* Section Headers */
+h4 {
+    color: #003366;
+    font-weight: 700;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #ff8c42;
+    font-size: 1.6rem;
+    letter-spacing: -0.3px;
+    background: linear-gradient(to right, #f0f7ff, transparent);
+    padding-left: 10px;
+}
+
+/* History / Self Declaration grid */
+.row {
+    margin-bottom: 10px;
+}
+
+.col-md-3, .col-md-9, .col-md-2, .col-md-4, .col-md-6, .col-md-12 {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #1e4a6b;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+    display: block;
+}
+
+.form-control, .form-select {
+    border: 1.5px solid #d9e2ef;
+    border-radius: 12px;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: #ffffff;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #ff8c42;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255,140,66,0.15);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Special row for Signature of Worker */
+.mb-3:has(> label > h4) {
+    background-color: #e9f0f9;
+    padding: 20px 20px 10px 20px;
+    border-radius: 16px;
+    margin-top: 20px;
+}
+
+.mb-3 label h4 {
+    margin-top: 0;
+    border-bottom: none;
+    background: none;
+    padding-left: 0;
+}
+
+/* Vision Examination Table adjustments */
+.table-bordered th[colspan="2"], 
+.table-bordered th[colspan="4"] {
+    text-align: center;
+    background-color: #1e4a6b !important;
+}
+
+.table tbody td select.form-control {
+    width: 100%;
+}
+
+/* Approved By section */
+.col-md-12.mb-2[style*="text-align: right;"] {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.col-md-12.mb-2[style*="text-align: right;"] label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.col-md-12.mb-2[style*="text-align: right;"] input {
+    width: 300px !important;
+}
+
+/* Female Workers Section */
+h4 + .row {
+    background-color: #fdf8f2;
+    padding: 20px;
+    border-radius: 20px;
+    margin-top: 10px;
+}
+
+/* Investigations row */
+.investigations-row .form-label {
+    font-size: 0.9rem;
+}
+
+/* Doctor's Opinion */
+select[name="opinion"] {
+    font-weight: 600;
+}
+
+/* Signatures section */
+.row:has(> .col-md-6 > label[for*="person"]) {
+    background-color: #f5f9ff;
+    padding: 20px;
+    border-radius: 16px;
+    margin: 20px 0;
+}
+
+/* Submit button */
+.btn-primary {
+    background-color: #ff8c42;
+    border-color: #ff8c42;
+    color: white;
+    font-weight: 700;
+    font-size: 1.3rem;
+    padding: 15px 40px;
+    border-radius: 60px;
+    box-shadow: 0 8px 16px rgba(255,140,66,0.3);
+    transition: all 0.3s ease;
+    margin-top: 30px;
+    width: 100%;
+    letter-spacing: 1px;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #e6732e;
+    border-color: #e6732e;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(255,140,66,0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Photo Preview */
+#photoPreview {
+    border: 2px solid #003366;
+    border-radius: 12px;
+    padding: 5px;
+    background: white;
+}
+
+/* Utility classes */
+hr {
+    border-top: 2px solid #cbd5e0;
+    opacity: 0.7;
+    margin: 30px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .logo-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    .form-group.text-center img[alt="NTPC Small Logo"] {
+        display: block;
+        margin: 0 auto 15px;
+    }
+    .logo-container img[alt="NTPC Main Logo"] {
+        margin-left: 0;
+    }
+    .form-group.text-center h3 {
+        font-size: 1.4rem;
+    }
+    .form-group.text-center h2 {
+        font-size: 1.3rem;
+    }
+    .col-md-12.mb-2[style*="text-align: right;"] {
+        justify-content: flex-start;
+    }
+    .col-md-12.mb-2[style*="text-align: right;"] input {
+        width: 100% !important;
+    }
+    .photo-box {
+        width: 100%;
+    }
+}
+
+/* Print styles - if form needs to be printed */
+@media print {
+    body {
+        background-color: white;
+        padding: 0;
+    }
+    .container {
+        box-shadow: none;
+        padding: 15px !important;
+    }
+    .btn-primary {
+        display: none;
+    }
+    .table thead th {
+        background-color: #eef3f9 !important;
+        color: black;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
