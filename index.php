@@ -32,34 +32,22 @@ $today = date('Y-m-d');
         <p>ANNUAL MEDICAL EXAMINATION OF CONTRACT WORKER</p>
     </div>
 
-    <div class="search-panel">
-        <div class="row g-2 align-items-end">
-            <div class="col-lg-7">
-                <label class="form-label mb-1" for="search_clims_id">ENTER CLIMS ID TO RETRIEVE EXISTING DATA</label>
-                        <input autocomplete="off" type="text" class="form-control" id="search_clims_id" placeholder="e.g. CLIMS-NTPC-2026-001">
-            </div>
-            <div class="col-lg-2 d-grid">
-                <button type="button" class="btn btn-gradient btn-pill" id="searchBtn">
-                    <i class="fa-solid fa-magnifying-glass me-1"></i>Search
-                </button>
-            </div>
-            <div class="col-lg-3 text-lg-end">
-                <span class="status-chip status-draft" id="recordStatus">
-                    <i class="fa-solid fa-pen-to-square"></i> Draft
-                </span>
-                <div class="small text-muted mt-1" id="recordInfo">Search CLIMS ID to begin</div>
-            </div>
+    <div class="search-section">
+        <div class="input-group">
+            <input autocomplete="off" type="text" class="form-control" id="search_clims_id" placeholder="Enter CLIMS ID (e.g., CLIMS-NTPC-2026-001)" autocomplete="off">
+            <button class="btn btn-primary" id="searchBtn" onclick="searchPatient()">
+                <i class="fas fa-search me-2"></i> Search
+            </button>
+            <button class="btn btn-outline-secondary" id="refreshBtn" onclick="refreshData()" title="Refresh data from database">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
-
-        <div class="mt-3 d-none" id="searchFeedback"></div>
-
-        <div class="d-flex flex-wrap gap-2 mt-3">
-            <button type="button" class="btn btn-gradient btn-pill d-none" id="createNewRecordBtn">
-                <i class="fa-solid fa-file-circle-plus me-1"></i>Create New Record
-            </button>
-            <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAllChangesBtn">
-                <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
-            </button>
+        <div id="searchStatus" class="mt-2"></div>
+        <div class="mt-3 text-end">
+            <span class="status-chip status-draft" id="recordStatus">
+                <i class="fa-solid fa-pen-to-square"></i> Draft
+            </span>
+            <div class="small text-muted mt-1" id="recordInfo">Search CLIMS ID to begin</div>
         </div>
     </div>
 
@@ -73,9 +61,6 @@ $today = date('Y-m-d');
                 <div class="section-head-actions">
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section1')" aria-label="Edit Container 1" title="Edit Container 1">
                         <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="1">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Demographics
                     </button>
                 </div>
             </div>
@@ -147,9 +132,6 @@ $today = date('Y-m-d');
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section2')" aria-label="Edit Container 2" title="Edit Container 2">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="2">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 2
-                    </button>
                 </div>
             </div>
 
@@ -204,9 +186,6 @@ $today = date('Y-m-d');
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section3')" aria-label="Edit Container 3" title="Edit Container 3">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="3">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 3
-                    </button>
                 </div>
             </div>
 
@@ -249,9 +228,6 @@ $today = date('Y-m-d');
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section4')" aria-label="Edit Container 4" title="Edit Container 4">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="4">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 4
-                    </button>
                 </div>
             </div>
 
@@ -273,9 +249,6 @@ $today = date('Y-m-d');
                 <div class="section-head-actions">
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section5')" aria-label="Edit Container 5" title="Edit Container 5">
                         <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="5">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 5
                     </button>
                 </div>
             </div>
@@ -329,9 +302,6 @@ $today = date('Y-m-d');
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section6')" aria-label="Edit Container 6" title="Edit Container 6">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="6">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 6
-                    </button>
                 </div>
             </div>
 
@@ -351,9 +321,6 @@ $today = date('Y-m-d');
                 <div class="section-head-actions">
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section7')" aria-label="Edit Container 7" title="Edit Container 7">
                         <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="7">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 7
                     </button>
                 </div>
             </div>
@@ -387,9 +354,6 @@ $today = date('Y-m-d');
                     <button type="button" class="container-edit-btn" onclick="toggleEdit('section8')" aria-label="Edit Container 8" title="Edit Container 8">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="8">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 8
-                    </button>
                 </div>
             </div>
 
@@ -413,11 +377,11 @@ $today = date('Y-m-d');
         </section>
 
         <div class="footer-actions d-flex flex-wrap justify-content-center gap-2">
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAllChangesBtn">
+                <i class="fa-solid fa-floppy-disk me-1"></i>Save All Changes
+            </button>
             <button type="button" class="btn btn-gradient btn-pill d-none" id="submitForm26Btn">
                 <i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26
-            </button>
-            <button type="button" class="btn btn-outline-soft" id="resetWorkflowBtn">
-                <i class="fa-solid fa-rotate-right me-1"></i>Reset Screen
             </button>
         </div>
     </form>

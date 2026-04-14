@@ -9,13 +9,10 @@
 
     const searchBtn = document.getElementById('searchBtn');
     const searchClimsInput = document.getElementById('search_clims_id');
-    const searchFeedback = document.getElementById('searchFeedback');
-
-    const createNewRecordBtn = document.getElementById('createNewRecordBtn');
+    const searchStatus = document.getElementById('searchStatus');
+    const refreshBtn = document.getElementById('refreshBtn');
     const saveAllChangesBtn = document.getElementById('saveAllChangesBtn');
     const submitForm26Btn = document.getElementById('submitForm26Btn');
-    const resetWorkflowBtn = document.getElementById('resetWorkflowBtn');
-
 
     const statusChip = document.getElementById('recordStatus');
     const recordInfo = document.getElementById('recordInfo');
@@ -57,11 +54,9 @@
         8: ['opinion', 'remarks', 'worker_signature', 'doctor_signature']
     };
 
-    const sectionButtons = Array.from(document.querySelectorAll('.save-section-btn'));
     const TEST_MODE_MESSAGE = '⚠️ TEST MODE: Using dummy CLIMS ID. This is for local testing only.';
 
     let mode = 'search';
-    let currentStep = 1;
     let recordStatus = 'draft';
     let loadedSnapshot = null;
 
@@ -156,13 +151,13 @@
 
     function setFeedback(message, type) {
         if (!message) {
-            searchFeedback.className = 'mt-3 d-none';
-            searchFeedback.textContent = '';
+            searchStatus.className = 'mt-3 d-none';
+            searchStatus.textContent = '';
             return;
         }
 
-        searchFeedback.className = 'mt-3 alert alert-' + type;
-        searchFeedback.textContent = message;
+        searchStatus.className = 'mt-3 alert alert-' + type;
+        searchStatus.textContent = message;
     }
 
     function setStatusChip(status) {
@@ -243,7 +238,6 @@
         const step = Number(section.dataset.step || containerId.replace(/\D/g, '')) || 0;
         const isEditing = !section.classList.contains('editing');
         const editButton = section.querySelector('.container-edit-btn');
-        const saveButton = section.querySelector('.save-section-btn');
 
         setSectionEditable(step, isEditing);
         section.classList.toggle('editing', isEditing);
@@ -254,32 +248,12 @@
             editButton.setAttribute('aria-label', isEditing ? 'Disable editing for this container' : 'Enable editing for this container');
             editButton.setAttribute('title', isEditing ? 'Disable editing' : 'Edit section');
         }
-
-        if (saveButton) {
-            saveButton.classList.toggle('d-none', !isEditing);
-            saveButton.disabled = !isEditing;
-        }
     }
 
     function setAllSectionsEditable(editable) {
         for (let i = 1; i <= 8; i += 1) {
             setSectionEditable(i, editable);
         }
-    }
-
-    function showPerContainerSaveButtons(showStep) {
-        sectionButtons.forEach((btn) => {
-            const step = Number(btn.dataset.step || '0');
-            btn.classList.toggle('d-none', step !== showStep);
-            btn.disabled = step !== showStep;
-        });
-    }
-
-    function hideAllContainerSaveButtons() {
-        sectionButtons.forEach((btn) => {
-            btn.classList.add('d-none');
-            btn.disabled = true;
-        });
     }
 
     function parseValueForField(value) {
@@ -360,7 +334,6 @@
     }
 
     function setBaseActionsVisibility(config) {
-        createNewRecordBtn.classList.toggle('d-none', !config.create);
         saveAllChangesBtn.classList.toggle('d-none', !config.saveAll);
         submitForm26Btn.classList.toggle('d-none', !config.submit);
     }
@@ -471,8 +444,7 @@
     }
 
     function prepareCreateMode(climsId, options = {}) {
-        mode = 'create';
-        currentStep = 1;
+        mode = 'edit';
         recordStatus = 'draft';
 
         form.reset();
@@ -492,23 +464,14 @@
         workerPhotoPreview.src = '';
         workerPhotoPreview.style.display = 'none';
 
-        hideAllSections();
-        showSection(1, true);
-        setSectionEditable(1, true);
-        showPerContainerSaveButtons(1);
-
-        for (let i = 2; i <= 8; i += 1) {
-            setSectionEditable(i, false);
-            showSection(i, false);
-        }
+        showAllSections();
+        setAllSectionsEditable(true);
 
         setStatusChip('draft');
         recordInfo.textContent = 'New draft record ID: ' + (examIdInput.value || '-') + ' | CLIMS ID: ' + climsId;
 
         setBaseActionsVisibility({
-            create: false,
-            edit: false,
-            saveAll: false,
+            saveAll: true,
             submit: false
         });
 
@@ -517,74 +480,20 @@
             showToast(TEST_MODE_MESSAGE, 'warning');
         } else {
             setFeedback('No record found. New draft record created for CLIMS ID: ' + climsId, 'info');
-            showToast('No record found. New draft created. Fill demographics and click Save Demographics.', 'info');
+            showToast('No record found. New draft created. Fill the form and click Save All Changes.', 'info');
         }
     }
 
-    function applyCreateProgress(nextContainer, status) {
-        setStatusChip(status || 'partial');
-
-        if ((status || '') === 'completed') {
-            currentStep = 8;
-            showAllSections();
-            setAllSectionsEditable(false);
-            hideAllContainerSaveButtons();
-            setBaseActionsVisibility({
-                create: false,
-                edit: false,
-                saveAll: false,
-                submit: true
-            });
-            setFeedback('All containers saved successfully. Click "Submit to FORM 26".', 'success');
-            return;
-        }
-
-        currentStep = Number(nextContainer || 1);
-        if (currentStep < 1 || currentStep > 8) {
-            currentStep = 1;
-        }
-
-        for (let i = 1; i <= 8; i += 1) {
-            if (i <= currentStep) {
-                showSection(i, true);
-            } else {
-                showSection(i, false);
-            }
-
-            if (i < currentStep) {
-                setSectionEditable(i, false);
-                continue;
-            }
-
-            if (i === currentStep) {
-                setSectionEditable(i, true);
-                continue;
-            }
-
-            setSectionEditable(i, false);
-        }
-
-        showPerContainerSaveButtons(currentStep);
-        setBaseActionsVisibility({
-            create: false,
-            edit: false,
-            saveAll: false,
-            submit: false
-        });
-    }
 
     function applyFoundReadOnly(data, status) {
-        mode = 'view';
+        mode = 'edit';
         showAllSections();
-        setAllSectionsEditable(false);
-        hideAllContainerSaveButtons();
+        setAllSectionsEditable(true);
 
         const isSubmitted = status === 'submitted';
 
         setBaseActionsVisibility({
-            create: false,
-            edit: !isSubmitted,
-            saveAll: false,
+            saveAll: true,
             submit: status === 'completed'
         });
 
@@ -657,67 +566,17 @@
         }
     }
 
-    async function saveContainer(step) {
-        if (mode !== 'create') {
-            showToast('Container save is available only during new record creation.', 'warning');
+    function refreshData() {
+        const climsId = searchClimsInput.value.trim();
+        if (!climsId) {
+            showToast('Enter CLIMS ID to refresh.', 'warning');
             return;
         }
-
-        if (step !== currentStep) {
-            showToast('Please save the currently unlocked container only.', 'warning');
-            return;
-        }
-
-        if (!validateContainer(step)) {
-            return;
-        }
-
-        const payload = buildContainerPayload(step);
-        setLoading(true, 'Saving Container ' + step + '...');
-
-        try {
-            const response = await fetch(app.saveUrl, {
-                method: 'POST',
-                body: payload
-            });
-            const data = await parseJsonResponse(response);
-
-            if (!data.success) {
-                throw new Error(data.message || 'Save failed.');
-            }
-
-            examIdInput.value = String(data.id || examIdInput.value || '');
-            if (data.serial_no) {
-                serialInput.value = data.serial_no;
-            }
-            if (data.worker_photo) {
-                workerPhotoPreview.src = data.worker_photo;
-                workerPhotoPreview.style.display = 'inline-block';
-            }
-
-            applyCreateProgress(Number(data.current_container || (step + 1)), data.record_status || 'partial');
-            searchClimsInput.value = climsIdInput.value.trim();
-            showToast(data.message || ('Container ' + step + ' saved.'), 'success');
-
-            if ((data.record_status || '') !== 'completed') {
-                const next = getSection(currentStep);
-                if (next) {
-                    next.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
-        } catch (error) {
-            showToast(error.message || 'Unable to save container.', 'danger');
-        } finally {
-            setLoading(false);
-        }
+        setFeedback('Refreshing data from database...', 'info');
+        searchRecord();
     }
 
     async function saveAllChanges() {
-        if (mode !== 'edit') {
-            showToast('Enable Edit Mode first.', 'warning');
-            return;
-        }
-
         if (!climsIdInput.value.trim()) {
             showToast('CLIMS ID missing.', 'warning');
             return;
@@ -754,14 +613,11 @@
             setStatusChip(data.record_status || 'partial');
             loadedSnapshot = collectSnapshot();
 
-            mode = 'view';
-            setAllSectionsEditable(false);
-            hideAllContainerSaveButtons();
+            mode = 'edit';
+            setAllSectionsEditable(true);
 
             setBaseActionsVisibility({
-                create: false,
-                edit: (data.record_status || '') !== 'submitted',
-                saveAll: false,
+                saveAll: true,
                 submit: (data.record_status || '') === 'completed' || (data.record_status || '') === 'submitted'
             });
 
@@ -824,10 +680,7 @@
             setStatusChip('submitted');
             mode = 'view';
             setAllSectionsEditable(false);
-            hideAllContainerSaveButtons();
             setBaseActionsVisibility({
-                create: false,
-                edit: false,
                 saveAll: false,
                 submit: true
             });
@@ -855,9 +708,8 @@
         return 'CLIMS/' + y + '/' + m + d + '/' + rnd;
     }
 
-    function resetScreen() {
+    function initializeApp() {
         mode = 'search';
-        currentStep = 1;
         recordStatus = 'draft';
         loadedSnapshot = null;
 
@@ -870,7 +722,6 @@
         workerPhotoPreview.style.display = 'none';
 
         hideAllSections();
-        hideAllContainerSaveButtons();
         submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
 
         setStatusChip('draft');
@@ -878,8 +729,6 @@
         setFeedback('', 'info');
 
         setBaseActionsVisibility({
-            create: false,
-            edit: false,
             saveAll: false,
             submit: false
         });
@@ -894,56 +743,31 @@
         }
     });
 
-    if (createNewRecordBtn) {
-        createNewRecordBtn.addEventListener('click', () => {
-            const climsId = searchClimsInput.value.trim();
-            if (!climsId) {
-                showToast('Enter CLIMS ID before creating a new record.', 'warning');
-                return;
-            }
-            prepareCreateMode(climsId, {
-                is_test_mode: climsId.toUpperCase().includes('DUMMY') || climsId.toUpperCase() === 'CLIMS-NTPC-2026-000'
-            });
-        });
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshData);
     }
 
     saveAllChangesBtn.addEventListener('click', saveAllChanges);
 
-    submitForm26Btn.addEventListener('click', submitToForm26);
+        submitForm26Btn.addEventListener('click', submitToForm26);
 
-    window.toggleEdit = toggleEdit;
+        window.toggleEdit = toggleEdit;
+        window.searchPatient = searchRecord;
+        window.refreshData = refreshData;
 
-    resetWorkflowBtn.addEventListener('click', () => {
-        const confirmReset = window.confirm('Reset the screen to initial search-only mode?');
-        if (!confirmReset) {
-            return;
-        }
-        resetScreen();
-    });
-
-    sectionButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const step = Number(btn.dataset.step || '0');
-            if (!step) {
+        workerPhotoInput.addEventListener('change', () => {
+            const file = workerPhotoInput.files && workerPhotoInput.files[0];
+            if (!file) {
                 return;
             }
-            saveContainer(step);
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                workerPhotoPreview.src = String(event.target && event.target.result ? event.target.result : '');
+                workerPhotoPreview.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
         });
-    });
-
-    workerPhotoInput.addEventListener('change', () => {
-        const file = workerPhotoInput.files && workerPhotoInput.files[0];
-        if (!file) {
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            workerPhotoPreview.src = String(event.target && event.target.result ? event.target.result : '');
-            workerPhotoPreview.style.display = 'inline-block';
-        };
-        reader.readAsDataURL(file);
-    });
 
     const heightField = getField('height');
     const weightField = getField('weight');
@@ -955,5 +779,5 @@
         weightField.addEventListener('input', calculateBMI);
     }
 
-    resetScreen();
+    initializeApp();
 })();
