@@ -12,10 +12,10 @@
     const searchFeedback = document.getElementById('searchFeedback');
 
     const createNewRecordBtn = document.getElementById('createNewRecordBtn');
-    const editModeBtn = document.getElementById('editModeBtn');
     const saveAllChangesBtn = document.getElementById('saveAllChangesBtn');
     const submitForm26Btn = document.getElementById('submitForm26Btn');
     const resetWorkflowBtn = document.getElementById('resetWorkflowBtn');
+
 
     const statusChip = document.getElementById('recordStatus');
     const recordInfo = document.getElementById('recordInfo');
@@ -234,6 +234,33 @@
         });
     }
 
+    function toggleEdit(containerId) {
+        const section = document.getElementById(containerId);
+        if (!section) {
+            return;
+        }
+
+        const step = Number(section.dataset.step || containerId.replace(/\D/g, '')) || 0;
+        const isEditing = !section.classList.contains('editing');
+        const editButton = section.querySelector('.container-edit-btn');
+        const saveButton = section.querySelector('.save-section-btn');
+
+        setSectionEditable(step, isEditing);
+        section.classList.toggle('editing', isEditing);
+
+        if (editButton) {
+            editButton.classList.toggle('active', isEditing);
+            editButton.innerHTML = isEditing ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-pencil"></i>';
+            editButton.setAttribute('aria-label', isEditing ? 'Disable editing for this container' : 'Enable editing for this container');
+            editButton.setAttribute('title', isEditing ? 'Disable editing' : 'Edit section');
+        }
+
+        if (saveButton) {
+            saveButton.classList.toggle('d-none', !isEditing);
+            saveButton.disabled = !isEditing;
+        }
+    }
+
     function setAllSectionsEditable(editable) {
         for (let i = 1; i <= 8; i += 1) {
             setSectionEditable(i, editable);
@@ -334,7 +361,6 @@
 
     function setBaseActionsVisibility(config) {
         createNewRecordBtn.classList.toggle('d-none', !config.create);
-        editModeBtn.classList.toggle('d-none', !config.edit);
         saveAllChangesBtn.classList.toggle('d-none', !config.saveAll);
         submitForm26Btn.classList.toggle('d-none', !config.submit);
     }
@@ -572,57 +598,6 @@
         recordInfo.textContent = 'Record ID: ' + (data.id || '') + ' | CLIMS ID: ' + (data.clims_id || '');
     }
 
-    function enterEditMode() {
-        if (mode !== 'view') {
-            return;
-        }
-
-        loadedSnapshot = collectSnapshot();
-        mode = 'edit';
-
-        setAllSectionsEditable(true);
-        hideAllContainerSaveButtons();
-
-        editModeBtn.innerHTML = '<i class="fa-solid fa-xmark me-1"></i>Cancel Edit Mode';
-
-        setBaseActionsVisibility({
-            create: false,
-            edit: true,
-            saveAll: true,
-            submit: false
-        });
-
-        setFeedback('Edit mode enabled. Update fields and click "Save Changes".', 'warning');
-    }
-
-    function cancelEditMode() {
-        if (mode !== 'edit') {
-            return;
-        }
-
-        applySnapshot(loadedSnapshot);
-        mode = 'view';
-        setAllSectionsEditable(false);
-        hideAllContainerSaveButtons();
-
-        editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
-
-        setBaseActionsVisibility({
-            create: false,
-            edit: true,
-            saveAll: false,
-            submit: recordStatus === 'completed' || recordStatus === 'submitted'
-        });
-
-        if (recordStatus === 'submitted') {
-            submitForm26Btn.innerHTML = '<i class="fa-solid fa-folder-open me-1"></i>Open FORM 26';
-        } else {
-            submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
-        }
-
-        setFeedback('Edit mode cancelled. Record is read-only.', 'info');
-    }
-
     async function searchRecord() {
         const climsId = searchClimsInput.value.trim();
         if (!climsId) {
@@ -783,7 +758,6 @@
             setAllSectionsEditable(false);
             hideAllContainerSaveButtons();
 
-            editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
             setBaseActionsVisibility({
                 create: false,
                 edit: (data.record_status || '') !== 'submitted',
@@ -897,8 +871,6 @@
 
         hideAllSections();
         hideAllContainerSaveButtons();
-
-        editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
         submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
 
         setStatusChip('draft');
@@ -935,19 +907,11 @@
         });
     }
 
-    editModeBtn.addEventListener('click', () => {
-        if (mode === 'view') {
-            enterEditMode();
-            return;
-        }
-        if (mode === 'edit') {
-            cancelEditMode();
-        }
-    });
-
     saveAllChangesBtn.addEventListener('click', saveAllChanges);
 
     submitForm26Btn.addEventListener('click', submitToForm26);
+
+    window.toggleEdit = toggleEdit;
 
     resetWorkflowBtn.addEventListener('click', () => {
         const confirmReset = window.confirm('Reset the screen to initial search-only mode?');

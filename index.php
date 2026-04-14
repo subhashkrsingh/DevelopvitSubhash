@@ -12,6 +12,7 @@ $today = date('Y-m-d');
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>CLIMS - Annual Medical Examination</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="assets/css/app.css">
 </head>
@@ -56,9 +57,6 @@ $today = date('Y-m-d');
             <button type="button" class="btn btn-gradient btn-pill d-none" id="createNewRecordBtn">
                 <i class="fa-solid fa-file-circle-plus me-1"></i>Create New Record
             </button>
-            <button type="button" class="btn btn-gradient btn-pill d-none" id="editModeBtn">
-                <i class="fa-solid fa-pen me-1"></i>Edit Mode
-            </button>
             <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAllChangesBtn">
                 <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
             </button>
@@ -72,9 +70,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="1" id="section1">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-id-card"></i>Container 1 - Demographics</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="1">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Demographics
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section1')" aria-label="Edit Container 1" title="Edit Container 1">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="1">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Demographics
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -140,9 +143,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="2" id="section2">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-file-signature"></i>Container 2 - History / Self Declaration</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="2">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 2
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section2')" aria-label="Edit Container 2" title="Edit Container 2">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="2">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 2
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -192,9 +200,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="3" id="section3">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-heart-pulse"></i>Container 3 - General Examination</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="3">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 3
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section3')" aria-label="Edit Container 3" title="Edit Container 3">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="3">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 3
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -232,9 +245,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="4" id="section4">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-stethoscope"></i>Container 4 - Systemic Examination</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="4">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 4
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section4')" aria-label="Edit Container 4" title="Edit Container 4">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 4
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -252,9 +270,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="5" id="section5">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-eye"></i>Container 5 - Vision</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="5">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 5
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section5')" aria-label="Edit Container 5" title="Edit Container 5">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="5">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 5
+                    </button>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -302,9 +325,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="6" id="section6">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-venus"></i>Container 6 - For Female Workers</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="6">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 6
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section6')" aria-label="Edit Container 6" title="Edit Container 6">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="6">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 6
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -320,9 +348,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="7" id="section7">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-vials"></i>Container 7 - Investigations</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="7">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 7
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section7')" aria-label="Edit Container 7" title="Edit Container 7">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="7">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 7
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
@@ -350,9 +383,14 @@ $today = date('Y-m-d');
         <section class="clims-section workflow-section d-none" data-step="8" id="section8">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-notes-medical"></i>Container 8 - Opinion &amp; Remarks</h2>
-                <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="8">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 8
-                </button>
+                <div class="section-head-actions">
+                    <button type="button" class="container-edit-btn" onclick="toggleEdit('section8')" aria-label="Edit Container 8" title="Edit Container 8">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-gradient btn-pill save-section-btn d-none" data-step="8">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 8
+                    </button>
+                </div>
             </div>
 
             <div class="row g-3">
