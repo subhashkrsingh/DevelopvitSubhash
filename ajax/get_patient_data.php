@@ -21,12 +21,71 @@ function send_json(array $payload): void
     exit;
 }
 
+function column_exists(mysqli $conn, string $table, string $column): bool
+{
+    $tableSafe = $conn->real_escape_string($table);
+    $columnSafe = $conn->real_escape_string($column);
+    $sql = "SHOW COLUMNS FROM `{$tableSafe}` LIKE '{$columnSafe}'";
+    $res = $conn->query($sql);
+    return $res instanceof mysqli_result && $res->num_rows > 0;
+}
+
+function ensure_status_columns(mysqli $conn): void
+{
+    $hasRecordStatus = column_exists($conn, 'medical_examinations', 'record_status');
+    $hasCurrentContainer = column_exists($conn, 'medical_examinations', 'current_container');
+    $hasDataStatus = column_exists($conn, 'medical_examinations', 'data_status');
+
+    if (!$hasRecordStatus) {
+        $conn->query(
+            "ALTER TABLE medical_examinations
+             ADD COLUMN record_status ENUM('draft','partial','completed','submitted') DEFAULT 'draft'"
+        );
+        $hasRecordStatus = true;
+    }
+
+    if (!$hasCurrentContainer) {
+        $conn->query(
+            'ALTER TABLE medical_examinations
+             ADD COLUMN current_container INT DEFAULT 1'
+        );
+        $hasCurrentContainer = true;
+    }
+
+    if ($hasRecordStatus && $hasDataStatus) {
+        $conn->query(
+            "UPDATE medical_examinations
+             SET record_status = CASE
+                 WHEN data_status = 'verified' THEN 'submitted'
+                 WHEN data_status = 'completed' THEN 'completed'
+                 WHEN data_status = 'draft' THEN 'draft'
+                 ELSE COALESCE(record_status, 'draft')
+             END
+             WHERE record_status IS NULL OR record_status = '' OR record_status = 'draft'"
+        );
+    }
+
+    if ($hasCurrentContainer) {
+        $conn->query(
+            "UPDATE medical_examinations
+             SET current_container = CASE
+                 WHEN record_status IN ('completed', 'submitted') THEN 8
+                 WHEN current_container IS NULL OR current_container < 1 THEN 1
+                 WHEN current_container > 8 THEN 8
+                 ELSE current_container
+             END"
+        );
+    }
+}
+
 try {
     $conn = new mysqli('localhost', 'root', '', 'clinic');
 
     if ($conn->connect_error) {
         throw new Exception('Database connection failed: ' . $conn->connect_error);
     }
+
+    ensure_status_columns($conn);
 
     $clims_id = null;
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {

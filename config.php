@@ -48,6 +48,7 @@ function pdo(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+        ensure_medical_examinations_schema($pdo);
     } catch (Throwable $e) {
         if (PHP_SAPI === 'cli') {
             throw $e;
@@ -137,6 +138,93 @@ function is_test_clims_id(string $climsId): bool
         return true;
     }
     return strpos($normalized, 'DUMMY') !== false;
+}
+
+function table_exists(PDO $pdo, string $table): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = :schema_name AND TABLE_NAME = :table_name LIMIT 1'
+    );
+    $stmt->execute([
+        ':schema_name' => DB_NAME,
+        ':table_name' => $table,
+    ]);
+    return (bool)$stmt->fetchColumn();
+}
+
+function column_exists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = :schema_name AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name
+         LIMIT 1'
+    );
+    $stmt->execute([
+        ':schema_name' => DB_NAME,
+        ':table_name' => $table,
+        ':column_name' => $column,
+    ]);
+    return (bool)$stmt->fetchColumn();
+}
+
+function ensure_medical_examinations_schema(PDO $pdo): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!table_exists($pdo, 'medical_examinations')) {
+        $checked = true;
+        return;
+    }
+
+    $hasRecordStatus = column_exists($pdo, 'medical_examinations', 'record_status');
+    $hasCurrentContainer = column_exists($pdo, 'medical_examinations', 'current_container');
+    $hasDataStatus = column_exists($pdo, 'medical_examinations', 'data_status');
+
+    if (!$hasRecordStatus) {
+        $pdo->exec(
+            "ALTER TABLE medical_examinations
+             ADD COLUMN record_status ENUM('draft','partial','completed','submitted') DEFAULT 'draft'"
+        );
+        $hasRecordStatus = true;
+    }
+
+    if (!$hasCurrentContainer) {
+        $pdo->exec(
+            'ALTER TABLE medical_examinations
+             ADD COLUMN current_container INT DEFAULT 1'
+        );
+        $hasCurrentContainer = true;
+    }
+
+    if ($hasRecordStatus && $hasDataStatus) {
+        $pdo->exec(
+            "UPDATE medical_examinations
+             SET record_status = CASE
+                 WHEN data_status = 'verified' THEN 'submitted'
+                 WHEN data_status = 'completed' THEN 'completed'
+                 WHEN data_status = 'draft' THEN 'draft'
+                 ELSE COALESCE(record_status, 'draft')
+             END
+             WHERE record_status IS NULL OR record_status = '' OR record_status = 'draft'"
+        );
+    }
+
+    if ($hasCurrentContainer) {
+        $pdo->exec(
+            "UPDATE medical_examinations
+             SET current_container = CASE
+                 WHEN record_status IN ('completed', 'submitted') THEN 8
+                 WHEN current_container IS NULL OR current_container < 1 THEN 1
+                 WHEN current_container > 8 THEN 8
+                 ELSE current_container
+             END"
+        );
+    }
+
+    $checked = true;
 }
 
 function save_uploaded_photo(string $inputName = 'worker_photo'): ?string
