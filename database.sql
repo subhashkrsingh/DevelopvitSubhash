@@ -136,3 +136,11 @@ CREATE TABLE IF NOT EXISTS `form27` (
   UNIQUE KEY `uq_form27_exam` (`examination_id`),
   CONSTRAINT `fk_form27_exam` FOREIGN KEY (`examination_id`) REFERENCES `medical_examinations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+INSERT INTO `medical_examinations` (
+  `clims_id`, `full_name`, `age_sex`, `address`, `mobile_no`, `record_status`, `current_container`
+) VALUES (
+  'CLIMS-NTPC-2026-000', 'Test User', '30/M', 'Test Address, NTPC Dadri', '9999999999', 'draft', 1
+)
+ON DUPLICATE KEY UPDATE
+  `updated_at` = NOW();

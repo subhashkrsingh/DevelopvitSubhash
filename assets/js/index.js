@@ -58,6 +58,7 @@
     };
 
     const sectionButtons = Array.from(document.querySelectorAll('.save-section-btn'));
+    const TEST_MODE_MESSAGE = '⚠️ TEST MODE: Using dummy CLIMS ID. This is for local testing only.';
 
     let mode = 'search';
     let currentStep = 1;
@@ -428,17 +429,24 @@
         return fd;
     }
 
-    function prepareCreateMode(climsId) {
+    function prepareCreateMode(climsId, options = {}) {
         mode = 'create';
         currentStep = 1;
         recordStatus = 'draft';
 
         form.reset();
-        examIdInput.value = '';
-        serialInput.value = generateSerialNumber();
+        examIdInput.value = options.id ? String(options.id) : '';
+        serialInput.value = options.serial_no || generateSerialNumber();
         setInputValue('exam_date', today);
         setInputValue('demo_exam_date', today);
         setInputValue('clims_id', climsId);
+
+        if (options.prefill && typeof options.prefill === 'object') {
+            fillForm(options.prefill);
+            examIdInput.value = options.id ? String(options.id) : examIdInput.value;
+            serialInput.value = options.serial_no || getInputValue('serial_no') || serialInput.value;
+            setInputValue('clims_id', climsId);
+        }
 
         workerPhotoPreview.src = '';
         workerPhotoPreview.style.display = 'none';
@@ -454,7 +462,7 @@
         }
 
         setStatusChip('draft');
-        recordInfo.textContent = 'Creating new record for CLIMS ID: ' + climsId;
+        recordInfo.textContent = 'New draft record ID: ' + (examIdInput.value || '-') + ' | CLIMS ID: ' + climsId;
 
         setBaseActionsVisibility({
             create: false,
@@ -463,8 +471,13 @@
             submit: false
         });
 
-        setFeedback('No record found. Creating new record for CLIMS ID: ' + climsId, 'info');
-        showToast('Fill demographics and click Save Demographics to continue.', 'info');
+        if (options.is_test_mode) {
+            setFeedback(TEST_MODE_MESSAGE, 'warning');
+            showToast(TEST_MODE_MESSAGE, 'warning');
+        } else {
+            setFeedback('No record found. New draft record created for CLIMS ID: ' + climsId, 'info');
+            showToast('No record found. New draft created. Fill demographics and click Save Demographics.', 'info');
+        }
     }
 
     function applyCreateProgress(nextContainer, status) {
@@ -620,16 +633,11 @@
             }
 
             if (!data.found) {
-                mode = 'search_not_found';
-                hideAllSections();
-                setStatusChip('draft');
-                recordInfo.textContent = 'No existing record for CLIMS ID: ' + climsId;
-                setFeedback('No record found. Create new record?', 'warning');
-                setBaseActionsVisibility({
-                    create: true,
-                    edit: false,
-                    saveAll: false,
-                    submit: false
+                prepareCreateMode(climsId, {
+                    id: data.id || '',
+                    serial_no: (data.data && data.data.serial_no) ? data.data.serial_no : '',
+                    is_test_mode: Boolean(data.is_test_mode),
+                    prefill: data.data || null
                 });
                 return;
             }
@@ -641,8 +649,13 @@
             applyFoundReadOnly(data.data || {}, data.record_status || 'draft');
             loadedSnapshot = collectSnapshot();
 
-            setFeedback('Record found for CLIMS ID: ' + climsId, 'success');
-            showToast('Record loaded successfully.', 'success');
+            if (data.is_test_mode) {
+                setFeedback(TEST_MODE_MESSAGE, 'warning');
+                showToast('Loaded existing dummy test record.', 'warning');
+            } else {
+                setFeedback('Record found for CLIMS ID: ' + climsId, 'success');
+                showToast('Record loaded successfully.', 'success');
+            }
         } catch (error) {
             showToast(error.message || 'Search failed.', 'danger');
         } finally {
@@ -890,14 +903,18 @@
         }
     });
 
-    createNewRecordBtn.addEventListener('click', () => {
-        const climsId = searchClimsInput.value.trim();
-        if (!climsId) {
-            showToast('Enter CLIMS ID before creating a new record.', 'warning');
-            return;
-        }
-        prepareCreateMode(climsId);
-    });
+    if (createNewRecordBtn) {
+        createNewRecordBtn.addEventListener('click', () => {
+            const climsId = searchClimsInput.value.trim();
+            if (!climsId) {
+                showToast('Enter CLIMS ID before creating a new record.', 'warning');
+                return;
+            }
+            prepareCreateMode(climsId, {
+                is_test_mode: climsId.toUpperCase().includes('DUMMY') || climsId.toUpperCase() === 'CLIMS-NTPC-2026-000'
+            });
+        });
+    }
 
     editModeBtn.addEventListener('click', () => {
         if (mode === 'view') {

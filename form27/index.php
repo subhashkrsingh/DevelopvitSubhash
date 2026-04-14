@@ -52,6 +52,7 @@ $defaults = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>CLIMS - Form 27 Health Register</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -77,10 +78,10 @@ $defaults = [
         <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
         <a class="btn btn-outline-soft" href="../index.php">Back To Main Form</a>
     <?php else: ?>
-        <form id="form27Form" novalidate>
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-            <input type="hidden" name="examination_id" value="<?php echo (int)$examId; ?>">
-            <input type="hidden" name="form27_id" id="form27_id" value="<?php echo (int)($form27['id'] ?? 0); ?>">
+        <form id="form27Form" autocomplete="off" novalidate>
+            <input autocomplete="off" id="csrf_token" type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input autocomplete="off" id="examination_id" type="hidden" name="examination_id" value="<?php echo (int)$examId; ?>">
+            <input autocomplete="off" type="hidden" name="form27_id" id="form27_id" value="<?php echo (int)($form27['id'] ?? 0); ?>">
 
             <section class="clims-section">
                 <div class="section-head">
@@ -88,28 +89,45 @@ $defaults = [
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-3"><label class="form-label">Serial Number</label><input type="text" class="form-control" name="serial_number" value="<?php echo htmlspecialchars((string)$defaults['serial_number'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Department</label><input type="text" class="form-control" name="department" value="<?php echo htmlspecialchars((string)$defaults['department'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Name</label><input type="text" class="form-control" name="name" value="<?php echo htmlspecialchars((string)$defaults['name'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-1"><label class="form-label">Sex</label><input type="text" class="form-control" name="sex" value="<?php echo htmlspecialchars((string)$defaults['sex'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-2"><label class="form-label">Age</label><input type="number" class="form-control" name="age" value="<?php echo htmlspecialchars((string)$defaults['age'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="serial_number">Serial Number</label>
+                        <input autocomplete="off" id="serial_number" type="text" class="form-control" name="serial_number" value="<?php echo htmlspecialchars((string)$defaults['serial_number'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="department">Department</label>
+                        <input autocomplete="off" id="department" type="text" class="form-control" name="department" value="<?php echo htmlspecialchars((string)$defaults['department'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="name">Name</label>
+                        <input autocomplete="name" id="name" type="text" class="form-control" name="name" value="<?php echo htmlspecialchars((string)$defaults['name'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-1"><label class="form-label" for="sex">Sex</label>
+                        <input autocomplete="off" id="sex" type="text" class="form-control" name="sex" value="<?php echo htmlspecialchars((string)$defaults['sex'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-2"><label class="form-label" for="age">Age</label>
+                        <input autocomplete="off" id="age" type="number" class="form-control" name="age" value="<?php echo htmlspecialchars((string)$defaults['age'], ENT_QUOTES, 'UTF-8'); ?>"></div>
 
-                    <div class="col-md-3"><label class="form-label">Start Date</label><input type="date" class="form-control" name="start_date" value="<?php echo htmlspecialchars((string)$defaults['start_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Occupation</label><input type="text" class="form-control" name="occupation" value="<?php echo htmlspecialchars((string)$defaults['occupation'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Examination Date</label><input type="date" class="form-control" name="exam_date" value="<?php echo htmlspecialchars((string)$defaults['exam_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Result</label><input type="text" class="form-control" name="result" value="<?php echo htmlspecialchars((string)$defaults['result'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="start_date">Start Date</label>
+                        <input autocomplete="off" id="start_date" type="date" class="form-control" name="start_date" value="<?php echo htmlspecialchars((string)$defaults['start_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="occupation">Occupation</label>
+                        <input autocomplete="off" id="occupation" type="text" class="form-control" name="occupation" value="<?php echo htmlspecialchars((string)$defaults['occupation'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="exam_date">Examination Date</label>
+                        <input autocomplete="off" id="exam_date" type="date" class="form-control" name="exam_date" value="<?php echo htmlspecialchars((string)$defaults['exam_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="result">Result</label>
+                        <input autocomplete="off" id="result" type="text" class="form-control" name="result" value="<?php echo htmlspecialchars((string)$defaults['result'], ENT_QUOTES, 'UTF-8'); ?>"></div>
 
-                    <div class="col-md-6"><label class="form-label">Leave / Transfer</label><textarea class="form-control" rows="2" name="leave_transfer"><?php echo htmlspecialchars((string)$defaults['leave_transfer'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
-                    <div class="col-md-6"><label class="form-label">Raw Materials</label><textarea class="form-control" rows="2" name="raw_materials"><?php echo htmlspecialchars((string)$defaults['raw_materials'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                    <div class="col-md-6"><label class="form-label" for="leave_transfer">Leave / Transfer</label>
+                        <textarea autocomplete="off" id="leave_transfer" class="form-control" rows="2" name="leave_transfer"><?php echo htmlspecialchars((string)$defaults['leave_transfer'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                    <div class="col-md-6"><label class="form-label" for="raw_materials">Raw Materials</label>
+                        <textarea autocomplete="off" id="raw_materials" class="form-control" rows="2" name="raw_materials"><?php echo htmlspecialchars((string)$defaults['raw_materials'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
 
-                    <div class="col-md-6"><label class="form-label">Signs &amp; Symptoms</label><textarea class="form-control" rows="2" name="signs_symptoms"><?php echo htmlspecialchars((string)$defaults['signs_symptoms'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
-                    <div class="col-md-6"><label class="form-label">Tests Result</label><textarea class="form-control" rows="2" name="tests_result"><?php echo htmlspecialchars((string)$defaults['tests_result'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                    <div class="col-md-6"><label class="form-label" for="signs_symptoms">Signs &amp; Symptoms</label>
+                        <textarea autocomplete="off" id="signs_symptoms" class="form-control" rows="2" name="signs_symptoms"><?php echo htmlspecialchars((string)$defaults['signs_symptoms'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                    <div class="col-md-6"><label class="form-label" for="tests_result">Tests Result</label>
+                        <textarea autocomplete="off" id="tests_result" class="form-control" rows="2" name="tests_result"><?php echo htmlspecialchars((string)$defaults['tests_result'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
 
-                    <div class="col-md-6"><label class="form-label">Suspension Details</label><textarea class="form-control" rows="2" name="suspension_details"><?php echo htmlspecialchars((string)$defaults['suspension_details'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
-                    <div class="col-md-3"><label class="form-label">Certificate Issued</label><input type="text" class="form-control" name="certificate_issued" value="<?php echo htmlspecialchars((string)$defaults['certificate_issued'], ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><label class="form-label">Recertified Date</label><input type="date" class="form-control" name="recertified_date" value="<?php echo htmlspecialchars((string)$defaults['recertified_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-6"><label class="form-label" for="suspension_details">Suspension Details</label>
+                        <textarea autocomplete="off" id="suspension_details" class="form-control" rows="2" name="suspension_details"><?php echo htmlspecialchars((string)$defaults['suspension_details'], ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                    <div class="col-md-3"><label class="form-label" for="certificate_issued">Certificate Issued</label>
+                        <input autocomplete="off" id="certificate_issued" type="text" class="form-control" name="certificate_issued" value="<?php echo htmlspecialchars((string)$defaults['certificate_issued'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-md-3"><label class="form-label" for="recertified_date">Recertified Date</label>
+                        <input autocomplete="off" id="recertified_date" type="date" class="form-control" name="recertified_date" value="<?php echo htmlspecialchars((string)$defaults['recertified_date'], ENT_QUOTES, 'UTF-8'); ?>"></div>
 
-                    <div class="col-12"><label class="form-label">Certifying Surgeon Signature</label><input type="text" class="form-control" name="surgeon_signature" value="<?php echo htmlspecialchars((string)$defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="col-12"><label class="form-label" for="surgeon_signature">Certifying Surgeon Signature</label>
+                        <input autocomplete="off" id="surgeon_signature" type="text" class="form-control" name="surgeon_signature" value="<?php echo htmlspecialchars((string)$defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>"></div>
                 </div>
             </section>
 
@@ -139,4 +157,6 @@ window.FORM27_APP = {
 <?php endif; ?>
 </body>
 </html>
+
+
 

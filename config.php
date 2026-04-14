@@ -15,6 +15,7 @@ define('APP_DEBUG', true);
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
 define('WORKER_UPLOAD_DIR', __DIR__ . '/uploads/workers');
 define('WORKER_UPLOAD_WEB_PATH', 'uploads/workers');
+define('DUMMY_CLIMS_ID', 'CLIMS-NTPC-2026-000');
 
 if (!is_dir(WORKER_UPLOAD_DIR)) {
     @mkdir(WORKER_UPLOAD_DIR, 0775, true);
@@ -113,6 +114,15 @@ function generate_serial_no(): string
         date('md'),
         random_int(1000, 9999)
     );
+}
+
+function is_test_clims_id(string $climsId): bool
+{
+    $normalized = strtoupper(trim($climsId));
+    if ($normalized === strtoupper(DUMMY_CLIMS_ID)) {
+        return true;
+    }
+    return strpos($normalized, 'DUMMY') !== false;
 }
 
 function save_uploaded_photo(string $inputName = 'worker_photo'): ?string
@@ -242,6 +252,14 @@ function calculate_last_completed_container(array $row): int
     $last = 0;
 
     for ($i = 1; $i <= 8; $i++) {
+        if ($i === 1) {
+            if (has_value($row['full_name'] ?? null) && has_value($row['clims_id'] ?? null)) {
+                $last = 1;
+                continue;
+            }
+            break;
+        }
+
         $hasAnyValue = false;
         foreach ($containerFields[$i] as $field) {
             if (has_value($row[$field] ?? null)) {
