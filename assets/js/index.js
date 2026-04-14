@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
     'use strict';
 
     const app = window.CLIMS_APP || {};
@@ -103,6 +103,21 @@
     function setLoading(isVisible, text = 'Please wait...') {
         loadingText.textContent = text;
         loadingOverlay.style.display = isVisible ? 'flex' : 'none';
+    }
+
+    async function parseJsonResponse(response) {
+        const rawText = await response.text();
+        const cleanText = rawText.replace(/^\uFEFF/, '').trim();
+
+        if (!cleanText) {
+            throw new Error('Empty response from server.');
+        }
+
+        try {
+            return JSON.parse(cleanText);
+        } catch (error) {
+            throw new Error('Invalid JSON response: ' + cleanText.substring(0, 180));
+        }
     }
 
     function getField(name) {
@@ -626,7 +641,7 @@
                 method: 'POST',
                 body: fd
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.message || 'Unable to process search.');
@@ -686,7 +701,7 @@
                 method: 'POST',
                 body: payload
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.message || 'Save failed.');
@@ -742,7 +757,7 @@
                 method: 'POST',
                 body: payload
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.message || 'Unable to save changes.');
@@ -822,7 +837,7 @@
                 method: 'POST',
                 body: fd
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.message || 'Submission failed.');

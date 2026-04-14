@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Save as test_db.php in your project root
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -50,4 +50,3 @@ if ($conn->connect_error) {
 
     $conn->close();
 }
-?>

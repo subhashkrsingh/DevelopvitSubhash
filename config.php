@@ -1,7 +1,11 @@
-﻿<?php
+<?php
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+if (PHP_SAPI !== 'cli' && ob_get_level() === 0) {
+    ob_start();
 }
 
 date_default_timezone_set('Asia/Kolkata');
@@ -80,15 +84,25 @@ function verify_csrf_or_exit(?string $token): void
 function json_response(bool $success, string $message, array $extra = [], int $statusCode = 200): void
 {
     http_response_code($statusCode);
-    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Type: application/json');
 
     $payload = array_merge([
         'success' => $success,
         'message' => $message,
     ], $extra);
 
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    if (ob_get_length()) {
+        ob_clean();
+    }
+
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+    echo remove_bom($json === false ? '{}' : $json);
     exit;
+}
+
+function remove_bom(string $data): string
+{
+    return preg_replace('/^\xEF\xBB\xBF/', '', $data) ?? $data;
 }
 
 function normalize_string($value): ?string

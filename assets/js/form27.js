@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
     'use strict';
 
     const app = window.FORM27_APP || {};
@@ -31,6 +31,21 @@
         el.addEventListener('hidden.bs.toast', () => el.remove());
     }
 
+    async function parseJsonResponse(response) {
+        const rawText = await response.text();
+        const cleanText = rawText.replace(/^\uFEFF/, '').trim();
+
+        if (!cleanText) {
+            throw new Error('Empty response from server.');
+        }
+
+        try {
+            return JSON.parse(cleanText);
+        } catch (error) {
+            throw new Error('Invalid JSON response: ' + cleanText.substring(0, 180));
+        }
+    }
+
     async function saveForm27() {
         setLoading(true, 'Saving Form 27...');
         try {
@@ -39,7 +54,7 @@
                 method: 'POST',
                 body: fd
             });
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.message || 'Save failed.');
