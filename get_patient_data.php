@@ -18,21 +18,41 @@ try {
     $row = get_medical_examination_by_clims($pdo, $climsId);
 
     if (!$row) {
-        json_response(false, 'No record found for CLIMS ID: ' . $climsId);
+        json_response(true, 'No record found for CLIMS ID: ' . $climsId, [
+            'found' => false,
+        ]);
     }
 
-    $status = $row['data_status'] ?? 'draft';
-    $lastCompleted = calculate_last_completed_container($row);
+    $progress = derive_progress_state($row);
+
+    if (
+        ($row['record_status'] ?? null) !== $progress['record_status'] ||
+        (int)($row['current_container'] ?? 0) !== (int)$progress['current_container']
+    ) {
+        $syncStmt = $pdo->prepare(
+            'UPDATE medical_examinations
+             SET record_status = :record_status, current_container = :current_container, updated_at = NOW()
+             WHERE id = :id'
+        );
+        $syncStmt->execute([
+            ':record_status' => $progress['record_status'],
+            ':current_container' => $progress['current_container'],
+            ':id' => (int)$row['id'],
+        ]);
+
+        $row = get_medical_examination_by_id($pdo, (int)$row['id']) ?: $row;
+    }
 
     json_response(true, 'Record loaded successfully.', [
+        'found' => true,
         'id' => (int)$row['id'],
         'data' => $row,
-        'data_status' => $status,
-        'last_completed_container' => $lastCompleted,
+        'record_status' => $progress['record_status'],
+        'current_container' => $progress['current_container'],
+        'last_completed_container' => $progress['last_completed_container'],
     ]);
 } catch (Throwable $e) {
     json_response(false, 'Unable to fetch patient data.', [
         'error' => APP_DEBUG ? $e->getMessage() : null,
     ], 500);
 }
-

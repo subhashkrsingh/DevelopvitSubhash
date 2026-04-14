@@ -200,9 +200,41 @@ function get_medical_examination_by_id(PDO $pdo, int $id): ?array
     return $row ?: null;
 }
 
+function normalize_record_status(?string $status): string
+{
+    $normalized = strtolower(trim((string)$status));
+    if ($normalized === 'submitted') {
+        return 'submitted';
+    }
+    if ($normalized === 'completed') {
+        return 'completed';
+    }
+    if ($normalized === 'partial') {
+        return 'partial';
+    }
+    if ($normalized === 'verified') {
+        return 'submitted';
+    }
+    return 'draft';
+}
+
+function get_record_status_from_row(array $row): string
+{
+    if (array_key_exists('record_status', $row)) {
+        return normalize_record_status((string)$row['record_status']);
+    }
+
+    if (array_key_exists('data_status', $row)) {
+        return normalize_record_status((string)$row['data_status']);
+    }
+
+    return 'draft';
+}
+
 function calculate_last_completed_container(array $row): int
 {
-    if (($row['data_status'] ?? '') === 'verified' || ($row['data_status'] ?? '') === 'completed') {
+    $status = get_record_status_from_row($row);
+    if ($status === 'submitted' || $status === 'completed') {
         return 8;
     }
 
@@ -226,6 +258,42 @@ function calculate_last_completed_container(array $row): int
     }
 
     return $last;
+}
+
+function derive_progress_state(array $row): array
+{
+    $lastCompleted = calculate_last_completed_container($row);
+    $status = get_record_status_from_row($row);
+
+    if ($status !== 'submitted') {
+        if ($lastCompleted >= 8) {
+            $status = 'completed';
+        } elseif ($lastCompleted >= 1) {
+            $status = 'partial';
+        } else {
+            $status = 'draft';
+        }
+    }
+
+    $currentContainer = 1;
+    if ($status === 'submitted' || $status === 'completed') {
+        $currentContainer = 8;
+    } else {
+        $currentContainer = min($lastCompleted + 1, 8);
+    }
+
+    if (isset($row['current_container']) && is_numeric((string)$row['current_container'])) {
+        $rowContainer = (int)$row['current_container'];
+        if ($rowContainer >= 1 && $rowContainer <= 8 && $status !== 'submitted' && $status !== 'completed') {
+            $currentContainer = max($currentContainer, $rowContainer);
+        }
+    }
+
+    return [
+        'record_status' => $status,
+        'last_completed_container' => $lastCompleted,
+        'current_container' => $currentContainer,
+    ];
 }
 
 function extract_age(?string $ageSex): ?int

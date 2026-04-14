@@ -6,15 +6,23 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
     const toastContainer = document.getElementById('toastContainer');
+
     const searchBtn = document.getElementById('searchBtn');
     const searchClimsInput = document.getElementById('search_clims_id');
-    const climsIdInput = document.getElementById('clims_id');
-    const serialInput = document.getElementById('serial_no');
-    const examIdInput = document.getElementById('examination_id');
-    const finalSubmitBtn = document.getElementById('finalSubmitBtn');
-    const newRecordBtn = document.getElementById('newRecordBtn');
+    const searchFeedback = document.getElementById('searchFeedback');
+
+    const createNewRecordBtn = document.getElementById('createNewRecordBtn');
+    const editModeBtn = document.getElementById('editModeBtn');
+    const saveAllChangesBtn = document.getElementById('saveAllChangesBtn');
+    const submitForm26Btn = document.getElementById('submitForm26Btn');
+    const resetWorkflowBtn = document.getElementById('resetWorkflowBtn');
+
     const statusChip = document.getElementById('recordStatus');
     const recordInfo = document.getElementById('recordInfo');
+    const examIdInput = document.getElementById('examination_id');
+    const serialInput = document.getElementById('serial_no');
+    const climsIdInput = document.getElementById('clims_id');
+
     const workerPhotoInput = document.getElementById('worker_photo');
     const workerPhotoPreview = document.getElementById('worker_photo_preview');
 
@@ -49,8 +57,26 @@
         8: ['opinion', 'remarks', 'worker_signature', 'doctor_signature']
     };
 
-    let dataStatus = 'draft';
+    const sectionButtons = Array.from(document.querySelectorAll('.save-section-btn'));
+
+    let mode = 'search';
     let currentStep = 1;
+    let recordStatus = 'draft';
+    let loadedSnapshot = null;
+
+    function flattenFields() {
+        const all = [];
+        Object.values(fieldMap).forEach((arr) => {
+            arr.forEach((f) => {
+                if (!all.includes(f)) {
+                    all.push(f);
+                }
+            });
+        });
+        return all;
+    }
+
+    const allFields = flattenFields();
 
     function showToast(message, type = 'success') {
         const safeType = ['success', 'danger', 'warning', 'info'].includes(type) ? type : 'success';
@@ -73,117 +99,13 @@
         wrapper.addEventListener('hidden.bs.toast', () => wrapper.remove());
     }
 
-    function setLoading(isVisible, text = 'Saving...') {
+    function setLoading(isVisible, text = 'Please wait...') {
         loadingText.textContent = text;
         loadingOverlay.style.display = isVisible ? 'flex' : 'none';
     }
 
     function getField(name) {
         return form.querySelector('[name="' + name + '"]');
-    }
-
-    function setStatusChip(status) {
-        dataStatus = status || 'draft';
-        statusChip.classList.remove('status-draft', 'status-completed', 'status-verified');
-
-        if (dataStatus === 'verified') {
-            statusChip.classList.add('status-verified');
-            statusChip.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified';
-        } else if (dataStatus === 'completed') {
-            statusChip.classList.add('status-completed');
-            statusChip.innerHTML = '<i class="fa-solid fa-check"></i> Completed';
-        } else {
-            statusChip.classList.add('status-draft');
-            statusChip.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Draft';
-        }
-    }
-
-    function setSectionEditable(step, editable) {
-        const section = document.getElementById('section' + step);
-        if (!section) {
-            return;
-        }
-
-        section.classList.toggle('section-locked', !editable);
-        const controls = section.querySelectorAll('input, select, textarea, button');
-        controls.forEach((control) => {
-            if (control.type === 'hidden') {
-                return;
-            }
-            control.disabled = !editable;
-        });
-    }
-
-    function applyWorkflow() {
-        if (dataStatus === 'verified') {
-            for (let i = 1; i <= 8; i += 1) {
-                setSectionEditable(i, false);
-            }
-            finalSubmitBtn.style.display = 'none';
-            return;
-        }
-
-        if (dataStatus === 'completed') {
-            for (let i = 1; i <= 8; i += 1) {
-                setSectionEditable(i, false);
-            }
-            finalSubmitBtn.style.display = 'inline-flex';
-            return;
-        }
-
-        for (let i = 1; i <= 8; i += 1) {
-            setSectionEditable(i, i === currentStep);
-        }
-        finalSubmitBtn.style.display = 'none';
-    }
-
-    function parseValueForField(name, value) {
-        if (value === null || value === undefined) {
-            return '';
-        }
-        return String(value);
-    }
-
-    function fillForm(data) {
-        Object.entries(data || {}).forEach(([name, value]) => {
-            const nodes = form.querySelectorAll('[name="' + name + '"]');
-            if (!nodes.length) {
-                return;
-            }
-
-            if (nodes[0].type === 'radio') {
-                nodes.forEach((radio) => {
-                    radio.checked = String(radio.value) === String(value);
-                });
-                return;
-            }
-
-            if (nodes[0].type === 'file') {
-                return;
-            }
-
-            nodes[0].value = parseValueForField(name, value);
-        });
-
-        if (data.id) {
-            examIdInput.value = String(data.id);
-            recordInfo.textContent = 'Record ID: ' + data.id + ' | CLIMS ID: ' + (data.clims_id || '');
-        }
-
-        if (data.clims_id) {
-            climsIdInput.value = data.clims_id;
-            searchClimsInput.value = data.clims_id;
-        }
-
-        if (data.worker_photo) {
-            workerPhotoPreview.src = data.worker_photo;
-            workerPhotoPreview.style.display = 'inline-block';
-        } else {
-            workerPhotoPreview.src = '';
-            workerPhotoPreview.style.display = 'none';
-        }
-
-        calculateBMI();
     }
 
     function getInputValue(name) {
@@ -208,18 +130,204 @@
 
         if (nodes[0].type === 'radio') {
             nodes.forEach((node) => {
-                node.checked = node.value === value;
+                node.checked = String(node.value) === String(value || '');
             });
             return;
         }
 
-        nodes[0].value = value;
+        nodes[0].value = value === null || value === undefined ? '' : String(value);
+    }
+
+    function setFeedback(message, type) {
+        if (!message) {
+            searchFeedback.className = 'mt-3 d-none';
+            searchFeedback.textContent = '';
+            return;
+        }
+
+        searchFeedback.className = 'mt-3 alert alert-' + type;
+        searchFeedback.textContent = message;
+    }
+
+    function setStatusChip(status) {
+        recordStatus = status || 'draft';
+        statusChip.classList.remove('status-draft', 'status-partial', 'status-completed', 'status-submitted');
+
+        if (recordStatus === 'submitted') {
+            statusChip.classList.add('status-submitted');
+            statusChip.innerHTML = '<i class="fa-solid fa-circle-check"></i> Submitted';
+            return;
+        }
+
+        if (recordStatus === 'completed') {
+            statusChip.classList.add('status-completed');
+            statusChip.innerHTML = '<i class="fa-solid fa-check"></i> Completed';
+            return;
+        }
+
+        if (recordStatus === 'partial') {
+            statusChip.classList.add('status-partial');
+            statusChip.innerHTML = '<i class="fa-solid fa-list-check"></i> Partial';
+            return;
+        }
+
+        statusChip.classList.add('status-draft');
+        statusChip.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Draft';
+    }
+
+    function getSection(step) {
+        return document.getElementById('section' + step);
+    }
+
+    function showSection(step, show) {
+        const section = getSection(step);
+        if (!section) {
+            return;
+        }
+        section.classList.toggle('d-none', !show);
+    }
+
+    function hideAllSections() {
+        for (let i = 1; i <= 8; i += 1) {
+            showSection(i, false);
+        }
+    }
+
+    function showAllSections() {
+        for (let i = 1; i <= 8; i += 1) {
+            showSection(i, true);
+        }
+    }
+
+    function setSectionEditable(step, editable) {
+        const section = getSection(step);
+        if (!section) {
+            return;
+        }
+
+        section.classList.toggle('section-locked', !editable);
+
+        const controls = section.querySelectorAll('input, select, textarea');
+        controls.forEach((control) => {
+            const name = control.getAttribute('name') || '';
+            if (name === 'serial_no' || name === 'clims_id' || name === 'bmi') {
+                control.disabled = true;
+                return;
+            }
+            control.disabled = !editable;
+        });
+    }
+
+    function setAllSectionsEditable(editable) {
+        for (let i = 1; i <= 8; i += 1) {
+            setSectionEditable(i, editable);
+        }
+    }
+
+    function showPerContainerSaveButtons(showStep) {
+        sectionButtons.forEach((btn) => {
+            const step = Number(btn.dataset.step || '0');
+            btn.classList.toggle('d-none', step !== showStep);
+            btn.disabled = step !== showStep;
+        });
+    }
+
+    function hideAllContainerSaveButtons() {
+        sectionButtons.forEach((btn) => {
+            btn.classList.add('d-none');
+            btn.disabled = true;
+        });
+    }
+
+    function parseValueForField(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value);
+    }
+
+    function fillForm(data) {
+        Object.entries(data || {}).forEach(([name, value]) => {
+            const nodes = form.querySelectorAll('[name="' + name + '"]');
+            if (!nodes.length) {
+                return;
+            }
+
+            if (nodes[0].type === 'file') {
+                return;
+            }
+
+            if (nodes[0].type === 'radio') {
+                nodes.forEach((radio) => {
+                    radio.checked = String(radio.value) === String(value);
+                });
+                return;
+            }
+
+            nodes[0].value = parseValueForField(value);
+        });
+
+        if (data.worker_photo) {
+            workerPhotoPreview.src = data.worker_photo;
+            workerPhotoPreview.style.display = 'inline-block';
+        } else {
+            workerPhotoPreview.src = '';
+            workerPhotoPreview.style.display = 'none';
+        }
+
+        calculateBMI();
+    }
+
+    function collectSnapshot() {
+        const snapshot = {};
+        allFields.forEach((field) => {
+            if (field === 'worker_photo') {
+                return;
+            }
+            snapshot[field] = getInputValue(field);
+        });
+        snapshot.id = examIdInput.value;
+        snapshot.worker_photo = workerPhotoPreview.src || '';
+        return snapshot;
+    }
+
+    function applySnapshot(snapshot) {
+        if (!snapshot) {
+            return;
+        }
+
+        Object.entries(snapshot).forEach(([name, value]) => {
+            if (name === 'worker_photo' || name === 'id') {
+                return;
+            }
+            setInputValue(name, value);
+        });
+
+        examIdInput.value = snapshot.id || '';
+
+        if (snapshot.worker_photo) {
+            workerPhotoPreview.src = snapshot.worker_photo;
+            workerPhotoPreview.style.display = 'inline-block';
+        } else {
+            workerPhotoPreview.src = '';
+            workerPhotoPreview.style.display = 'none';
+        }
+
+        calculateBMI();
+    }
+
+    function setBaseActionsVisibility(config) {
+        createNewRecordBtn.classList.toggle('d-none', !config.create);
+        editModeBtn.classList.toggle('d-none', !config.edit);
+        saveAllChangesBtn.classList.toggle('d-none', !config.saveAll);
+        submitForm26Btn.classList.toggle('d-none', !config.submit);
     }
 
     function isStepDataPresent(step) {
         const fields = fieldMap[step] || [];
         for (let i = 0; i < fields.length; i += 1) {
             const field = fields[i];
+
             if (field === 'worker_photo') {
                 if (workerPhotoInput.files && workerPhotoInput.files.length > 0) {
                     return true;
@@ -229,6 +337,7 @@
                 }
                 continue;
             }
+
             if (getInputValue(field).trim() !== '') {
                 return true;
             }
@@ -236,25 +345,15 @@
         return false;
     }
 
-    function validateStep(step) {
-        const climsId = climsIdInput.value.trim();
-
-        if (step === 1) {
-            if (!climsId) {
-                showToast('CLIMS ID is required for Container 1.', 'warning');
-                climsIdInput.focus();
-                return false;
-            }
-            if (!getInputValue('full_name').trim()) {
-                showToast('Worker name is required.', 'warning');
-                getField('full_name').focus();
-                return false;
-            }
-            return true;
+    function validateContainer(step) {
+        if (!climsIdInput.value.trim()) {
+            showToast('CLIMS ID is required.', 'warning');
+            return false;
         }
 
-        if (!climsId) {
-            showToast('Please save Container 1 first so CLIMS ID is locked.', 'warning');
+        if (step === 1 && !getInputValue('full_name').trim()) {
+            showToast('Name is required in demographics.', 'warning');
+            getField('full_name').focus();
             return false;
         }
 
@@ -264,14 +363,27 @@
         }
 
         if (!isStepDataPresent(step)) {
-            showToast('Please fill at least one field before saving this container.', 'warning');
+            showToast('Please fill at least one field in this container before saving.', 'warning');
             return false;
         }
 
         return true;
     }
 
-    function collectStepData(step) {
+    function calculateBMI() {
+        const height = parseFloat(getInputValue('height'));
+        const weight = parseFloat(getInputValue('weight'));
+
+        if (!height || !weight || height <= 0 || weight <= 0) {
+            setInputValue('bmi', '');
+            return;
+        }
+
+        const bmi = weight / ((height / 100) * (height / 100));
+        setInputValue('bmi', bmi.toFixed(2));
+    }
+
+    function buildContainerPayload(step) {
         const fd = new FormData();
         fd.append('csrf_token', app.csrfToken || '');
         fd.append('action', 'save_container');
@@ -287,19 +399,273 @@
                 }
                 return;
             }
-
             fd.append(field, getInputValue(field));
         });
 
         return fd;
     }
 
-    async function saveContainer(step) {
-        if (!validateStep(step)) {
+    function buildSaveAllPayload() {
+        const fd = new FormData();
+        fd.append('csrf_token', app.csrfToken || '');
+        fd.append('action', 'save_all');
+        fd.append('clims_id', climsIdInput.value.trim());
+        fd.append('examination_id', examIdInput.value || '');
+
+        allFields.forEach((field) => {
+            if (field === 'clims_id') {
+                return;
+            }
+            if (field === 'worker_photo') {
+                if (workerPhotoInput.files && workerPhotoInput.files[0]) {
+                    fd.append('worker_photo', workerPhotoInput.files[0]);
+                }
+                return;
+            }
+            fd.append(field, getInputValue(field));
+        });
+
+        return fd;
+    }
+
+    function prepareCreateMode(climsId) {
+        mode = 'create';
+        currentStep = 1;
+        recordStatus = 'draft';
+
+        form.reset();
+        examIdInput.value = '';
+        serialInput.value = generateSerialNumber();
+        setInputValue('exam_date', today);
+        setInputValue('demo_exam_date', today);
+        setInputValue('clims_id', climsId);
+
+        workerPhotoPreview.src = '';
+        workerPhotoPreview.style.display = 'none';
+
+        hideAllSections();
+        showSection(1, true);
+        setSectionEditable(1, true);
+        showPerContainerSaveButtons(1);
+
+        for (let i = 2; i <= 8; i += 1) {
+            setSectionEditable(i, false);
+            showSection(i, false);
+        }
+
+        setStatusChip('draft');
+        recordInfo.textContent = 'Creating new record for CLIMS ID: ' + climsId;
+
+        setBaseActionsVisibility({
+            create: false,
+            edit: false,
+            saveAll: false,
+            submit: false
+        });
+
+        setFeedback('No record found. Creating new record for CLIMS ID: ' + climsId, 'info');
+        showToast('Fill demographics and click Save Demographics to continue.', 'info');
+    }
+
+    function applyCreateProgress(nextContainer, status) {
+        setStatusChip(status || 'partial');
+
+        if ((status || '') === 'completed') {
+            currentStep = 8;
+            showAllSections();
+            setAllSectionsEditable(false);
+            hideAllContainerSaveButtons();
+            setBaseActionsVisibility({
+                create: false,
+                edit: false,
+                saveAll: false,
+                submit: true
+            });
+            setFeedback('All containers saved successfully. Click "Submit to FORM 26".', 'success');
             return;
         }
 
-        const payload = collectStepData(step);
+        currentStep = Number(nextContainer || 1);
+        if (currentStep < 1 || currentStep > 8) {
+            currentStep = 1;
+        }
+
+        for (let i = 1; i <= 8; i += 1) {
+            if (i <= currentStep) {
+                showSection(i, true);
+            } else {
+                showSection(i, false);
+            }
+
+            if (i < currentStep) {
+                setSectionEditable(i, false);
+                continue;
+            }
+
+            if (i === currentStep) {
+                setSectionEditable(i, true);
+                continue;
+            }
+
+            setSectionEditable(i, false);
+        }
+
+        showPerContainerSaveButtons(currentStep);
+        setBaseActionsVisibility({
+            create: false,
+            edit: false,
+            saveAll: false,
+            submit: false
+        });
+    }
+
+    function applyFoundReadOnly(data, status) {
+        mode = 'view';
+        showAllSections();
+        setAllSectionsEditable(false);
+        hideAllContainerSaveButtons();
+
+        const isSubmitted = status === 'submitted';
+
+        setBaseActionsVisibility({
+            create: false,
+            edit: !isSubmitted,
+            saveAll: false,
+            submit: status === 'completed'
+        });
+
+        if (isSubmitted) {
+            submitForm26Btn.classList.remove('d-none');
+            submitForm26Btn.innerHTML = '<i class="fa-solid fa-folder-open me-1"></i>Open FORM 26';
+        } else {
+            submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
+        }
+
+        recordInfo.textContent = 'Record ID: ' + (data.id || '') + ' | CLIMS ID: ' + (data.clims_id || '');
+    }
+
+    function enterEditMode() {
+        if (mode !== 'view') {
+            return;
+        }
+
+        loadedSnapshot = collectSnapshot();
+        mode = 'edit';
+
+        setAllSectionsEditable(true);
+        hideAllContainerSaveButtons();
+
+        editModeBtn.innerHTML = '<i class="fa-solid fa-xmark me-1"></i>Cancel Edit Mode';
+
+        setBaseActionsVisibility({
+            create: false,
+            edit: true,
+            saveAll: true,
+            submit: false
+        });
+
+        setFeedback('Edit mode enabled. Update fields and click "Save Changes".', 'warning');
+    }
+
+    function cancelEditMode() {
+        if (mode !== 'edit') {
+            return;
+        }
+
+        applySnapshot(loadedSnapshot);
+        mode = 'view';
+        setAllSectionsEditable(false);
+        hideAllContainerSaveButtons();
+
+        editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
+
+        setBaseActionsVisibility({
+            create: false,
+            edit: true,
+            saveAll: false,
+            submit: recordStatus === 'completed' || recordStatus === 'submitted'
+        });
+
+        if (recordStatus === 'submitted') {
+            submitForm26Btn.innerHTML = '<i class="fa-solid fa-folder-open me-1"></i>Open FORM 26';
+        } else {
+            submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
+        }
+
+        setFeedback('Edit mode cancelled. Record is read-only.', 'info');
+    }
+
+    async function searchRecord() {
+        const climsId = searchClimsInput.value.trim();
+        if (!climsId) {
+            showToast('Enter CLIMS ID to search.', 'warning');
+            return;
+        }
+
+        setLoading(true, 'Searching CLIMS ID...');
+
+        try {
+            const fd = new FormData();
+            fd.append('csrf_token', app.csrfToken || '');
+            fd.append('clims_id', climsId);
+
+            const response = await fetch(app.lookupUrl, {
+                method: 'POST',
+                body: fd
+            });
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to process search.');
+            }
+
+            if (!data.found) {
+                mode = 'search_not_found';
+                hideAllSections();
+                setStatusChip('draft');
+                recordInfo.textContent = 'No existing record for CLIMS ID: ' + climsId;
+                setFeedback('No record found. Create new record?', 'warning');
+                setBaseActionsVisibility({
+                    create: true,
+                    edit: false,
+                    saveAll: false,
+                    submit: false
+                });
+                return;
+            }
+
+            form.reset();
+            fillForm(data.data || {});
+            examIdInput.value = String(data.id || '');
+            setStatusChip(data.record_status || 'draft');
+            applyFoundReadOnly(data.data || {}, data.record_status || 'draft');
+            loadedSnapshot = collectSnapshot();
+
+            setFeedback('Record found for CLIMS ID: ' + climsId, 'success');
+            showToast('Record loaded successfully.', 'success');
+        } catch (error) {
+            showToast(error.message || 'Search failed.', 'danger');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function saveContainer(step) {
+        if (mode !== 'create') {
+            showToast('Container save is available only during new record creation.', 'warning');
+            return;
+        }
+
+        if (step !== currentStep) {
+            showToast('Please save the currently unlocked container only.', 'warning');
+            return;
+        }
+
+        if (!validateContainer(step)) {
+            return;
+        }
+
+        const payload = buildContainerPayload(step);
         setLoading(true, 'Saving Container ' + step + '...');
 
         try {
@@ -313,10 +679,7 @@
                 throw new Error(data.message || 'Save failed.');
             }
 
-            if (data.id) {
-                examIdInput.value = String(data.id);
-                recordInfo.textContent = 'Record ID: ' + data.id + ' | CLIMS ID: ' + climsIdInput.value.trim();
-            }
+            examIdInput.value = String(data.id || examIdInput.value || '');
             if (data.serial_no) {
                 serialInput.value = data.serial_no;
             }
@@ -325,79 +688,112 @@
                 workerPhotoPreview.style.display = 'inline-block';
             }
 
-            setStatusChip(data.data_status || 'draft');
-            if (data.data_status === 'draft') {
-                currentStep = Number(data.next_step || (step + 1));
-                if (currentStep > 8) {
-                    currentStep = 8;
-                }
-            }
-
-            applyWorkflow();
+            applyCreateProgress(Number(data.current_container || (step + 1)), data.record_status || 'partial');
             searchClimsInput.value = climsIdInput.value.trim();
-            showToast(data.message || 'Container saved successfully.');
+            showToast(data.message || ('Container ' + step + ' saved.'), 'success');
 
-            if (step < 8 && data.data_status === 'draft') {
-                const nextSection = document.getElementById('section' + currentStep);
-                if (nextSection) {
-                    nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if ((data.record_status || '') !== 'completed') {
+                const next = getSection(currentStep);
+                if (next) {
+                    next.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }
         } catch (error) {
-            showToast(error.message || 'Unable to save.', 'danger');
+            showToast(error.message || 'Unable to save container.', 'danger');
         } finally {
             setLoading(false);
         }
     }
 
-    async function lookupByClimsId() {
-        const climsId = searchClimsInput.value.trim();
-        if (!climsId) {
-            showToast('Enter a CLIMS ID to search.', 'warning');
+    async function saveAllChanges() {
+        if (mode !== 'edit') {
+            showToast('Enable Edit Mode first.', 'warning');
             return;
         }
 
-        const fd = new FormData();
-        fd.append('csrf_token', app.csrfToken || '');
-        fd.append('clims_id', climsId);
+        if (!climsIdInput.value.trim()) {
+            showToast('CLIMS ID missing.', 'warning');
+            return;
+        }
 
-        setLoading(true, 'Fetching record...');
+        if (!getInputValue('full_name').trim()) {
+            showToast('Name cannot be empty.', 'warning');
+            return;
+        }
+
+        const payload = buildSaveAllPayload();
+        setLoading(true, 'Saving all changes...');
 
         try {
-            const response = await fetch(app.lookupUrl, {
+            const response = await fetch(app.saveUrl, {
                 method: 'POST',
-                body: fd
+                body: payload
             });
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error(data.message || 'Record not found.');
+                throw new Error(data.message || 'Unable to save changes.');
             }
 
-            form.reset();
-            fillForm(data.data || {});
-            setStatusChip(data.data_status || 'draft');
+            examIdInput.value = String(data.id || examIdInput.value || '');
+            if (data.serial_no) {
+                serialInput.value = data.serial_no;
+            }
+            if (data.worker_photo) {
+                workerPhotoPreview.src = data.worker_photo;
+                workerPhotoPreview.style.display = 'inline-block';
+            }
 
-            if (data.data_status === 'draft') {
-                const last = Number(data.last_completed_container || 0);
-                currentStep = Math.min(last + 1, 8);
+            setStatusChip(data.record_status || 'partial');
+            loadedSnapshot = collectSnapshot();
+
+            mode = 'view';
+            setAllSectionsEditable(false);
+            hideAllContainerSaveButtons();
+
+            editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
+            setBaseActionsVisibility({
+                create: false,
+                edit: (data.record_status || '') !== 'submitted',
+                saveAll: false,
+                submit: (data.record_status || '') === 'completed' || (data.record_status || '') === 'submitted'
+            });
+
+            if ((data.record_status || '') === 'submitted') {
+                submitForm26Btn.innerHTML = '<i class="fa-solid fa-folder-open me-1"></i>Open FORM 26';
             } else {
-                currentStep = 8;
+                submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
             }
 
-            applyWorkflow();
-            showToast('Record loaded for CLIMS ID: ' + climsId, 'info');
+            setFeedback('Changes saved successfully for CLIMS ID: ' + climsIdInput.value.trim(), 'success');
+            showToast(data.message || 'Changes saved.', 'success');
         } catch (error) {
-            showToast(error.message || 'Unable to load record.', 'danger');
+            showToast(error.message || 'Unable to save changes.', 'danger');
         } finally {
             setLoading(false);
         }
     }
 
-    async function finalSubmit() {
+    async function submitToForm26() {
+        const examId = examIdInput.value.trim();
+
+        if (recordStatus === 'submitted') {
+            if (!examId) {
+                showToast('Examination ID missing for Form 26 redirect.', 'danger');
+                return;
+            }
+            window.location.href = app.form26Url + '?examination_id=' + encodeURIComponent(examId);
+            return;
+        }
+
+        if (recordStatus !== 'completed') {
+            showToast('Please complete all 8 containers before submission.', 'warning');
+            return;
+        }
+
         const climsId = climsIdInput.value.trim();
         if (!climsId) {
-            showToast('CLIMS ID missing. Please load or save record first.', 'warning');
+            showToast('CLIMS ID missing.', 'warning');
             return;
         }
 
@@ -406,7 +802,8 @@
         fd.append('action', 'final_submit');
         fd.append('clims_id', climsId);
 
-        setLoading(true, 'Final submission in progress...');
+        setLoading(true, 'Submitting to FORM 26...');
+
         try {
             const response = await fetch(app.saveUrl, {
                 method: 'POST',
@@ -415,19 +812,29 @@
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error(data.message || 'Final submit failed.');
+                throw new Error(data.message || 'Submission failed.');
             }
 
-            setStatusChip('verified');
-            applyWorkflow();
-            showToast(data.message || 'Final submit complete. Redirecting to Form 26...', 'success');
+            setStatusChip('submitted');
+            mode = 'view';
+            setAllSectionsEditable(false);
+            hideAllContainerSaveButtons();
+            setBaseActionsVisibility({
+                create: false,
+                edit: false,
+                saveAll: false,
+                submit: true
+            });
+            submitForm26Btn.innerHTML = '<i class="fa-solid fa-folder-open me-1"></i>Open FORM 26';
 
-            const redirectUrl = data.redirect_url || (app.form26Url + '?examination_id=' + encodeURIComponent(data.id || examIdInput.value));
+            showToast(data.message || 'Submitted successfully. Redirecting...', 'success');
+
+            const redirectUrl = data.redirect_url || (app.form26Url + '?examination_id=' + encodeURIComponent(data.id || examId));
             window.setTimeout(() => {
                 window.location.href = redirectUrl;
-            }, 1000);
+            }, 900);
         } catch (error) {
-            showToast(error.message || 'Unable to submit final record.', 'danger');
+            showToast(error.message || 'Submission failed.', 'danger');
         } finally {
             setLoading(false);
         }
@@ -442,57 +849,86 @@
         return 'CLIMS/' + y + '/' + m + d + '/' + rnd;
     }
 
-    function calculateBMI() {
-        const height = parseFloat(getInputValue('height'));
-        const weight = parseFloat(getInputValue('weight'));
-        if (!height || !weight || height <= 0 || weight <= 0) {
-            setInputValue('bmi', '');
-            return;
-        }
-        const bmi = weight / ((height / 100) * (height / 100));
-        setInputValue('bmi', bmi.toFixed(2));
-    }
+    function resetScreen() {
+        mode = 'search';
+        currentStep = 1;
+        recordStatus = 'draft';
+        loadedSnapshot = null;
 
-    function resetForNewRecord() {
         form.reset();
         examIdInput.value = '';
-        serialInput.value = generateSerialNumber();
-        setInputValue('exam_date', today);
-        setInputValue('demo_exam_date', today);
-        searchClimsInput.value = '';
+        serialInput.value = '';
         climsIdInput.value = '';
+        searchClimsInput.value = '';
         workerPhotoPreview.src = '';
         workerPhotoPreview.style.display = 'none';
-        recordInfo.textContent = 'New record';
+
+        hideAllSections();
+        hideAllContainerSaveButtons();
+
+        editModeBtn.innerHTML = '<i class="fa-solid fa-pen me-1"></i>Edit Mode';
+        submitForm26Btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26';
+
         setStatusChip('draft');
-        currentStep = 1;
-        applyWorkflow();
+        recordInfo.textContent = 'Search CLIMS ID to begin';
+        setFeedback('', 'info');
+
+        setBaseActionsVisibility({
+            create: false,
+            edit: false,
+            saveAll: false,
+            submit: false
+        });
     }
 
-    document.querySelectorAll('.save-section-btn').forEach((button) => {
-        button.addEventListener('click', () => {
-            const step = Number(button.dataset.step || '0');
+    searchBtn.addEventListener('click', searchRecord);
+
+    searchClimsInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchRecord();
+        }
+    });
+
+    createNewRecordBtn.addEventListener('click', () => {
+        const climsId = searchClimsInput.value.trim();
+        if (!climsId) {
+            showToast('Enter CLIMS ID before creating a new record.', 'warning');
+            return;
+        }
+        prepareCreateMode(climsId);
+    });
+
+    editModeBtn.addEventListener('click', () => {
+        if (mode === 'view') {
+            enterEditMode();
+            return;
+        }
+        if (mode === 'edit') {
+            cancelEditMode();
+        }
+    });
+
+    saveAllChangesBtn.addEventListener('click', saveAllChanges);
+
+    submitForm26Btn.addEventListener('click', submitToForm26);
+
+    resetWorkflowBtn.addEventListener('click', () => {
+        const confirmReset = window.confirm('Reset the screen to initial search-only mode?');
+        if (!confirmReset) {
+            return;
+        }
+        resetScreen();
+    });
+
+    sectionButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const step = Number(btn.dataset.step || '0');
             if (!step) {
-                return;
-            }
-            if (dataStatus !== 'draft' || step !== currentStep) {
-                showToast('Only the current unlocked container can be edited.', 'warning');
                 return;
             }
             saveContainer(step);
         });
-    });
-
-    searchBtn.addEventListener('click', lookupByClimsId);
-    searchClimsInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            lookupByClimsId();
-        }
-    });
-
-    climsIdInput.addEventListener('blur', () => {
-        searchClimsInput.value = climsIdInput.value.trim();
     });
 
     workerPhotoInput.addEventListener('change', () => {
@@ -500,6 +936,7 @@
         if (!file) {
             return;
         }
+
         const reader = new FileReader();
         reader.onload = (event) => {
             workerPhotoPreview.src = String(event.target && event.target.result ? event.target.result : '');
@@ -510,6 +947,7 @@
 
     const heightField = getField('height');
     const weightField = getField('weight');
+
     if (heightField) {
         heightField.addEventListener('input', calculateBMI);
     }
@@ -517,15 +955,5 @@
         weightField.addEventListener('input', calculateBMI);
     }
 
-    finalSubmitBtn.addEventListener('click', finalSubmit);
-    newRecordBtn.addEventListener('click', () => {
-        const proceed = window.confirm('Start a new CLIMS record? Unsaved changes in current editable section will be lost.');
-        if (!proceed) {
-            return;
-        }
-        resetForNewRecord();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    resetForNewRecord();
+    resetScreen();
 })();
