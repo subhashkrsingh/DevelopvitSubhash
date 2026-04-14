@@ -18,7 +18,7 @@ $today = date('Y-m-d');
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-card">
         <div class="spinner-border text-primary" role="status"></div>
-        <p id="loadingText">Saving...</p>
+        <p id="loadingText">Please wait...</p>
     </div>
 </div>
 
@@ -33,7 +33,7 @@ $today = date('Y-m-d');
     <div class="search-panel">
         <div class="row g-2 align-items-end">
             <div class="col-lg-7">
-                <label class="form-label mb-1">Enter CLIMS ID to retrieve existing data</label>
+                <label class="form-label mb-1">ENTER CLIMS ID TO RETRIEVE EXISTING DATA</label>
                 <input type="text" class="form-control" id="search_clims_id" placeholder="e.g. CLIMS-NTPC-2026-001">
             </div>
             <div class="col-lg-2 d-grid">
@@ -45,8 +45,22 @@ $today = date('Y-m-d');
                 <span class="status-chip status-draft" id="recordStatus">
                     <i class="fa-solid fa-pen-to-square"></i> Draft
                 </span>
-                <div class="small text-muted mt-1" id="recordInfo">New record</div>
+                <div class="small text-muted mt-1" id="recordInfo">Search CLIMS ID to begin</div>
             </div>
+        </div>
+
+        <div class="mt-3 d-none" id="searchFeedback"></div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="createNewRecordBtn">
+                <i class="fa-solid fa-file-circle-plus me-1"></i>Create New Record
+            </button>
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="editModeBtn">
+                <i class="fa-solid fa-pen me-1"></i>Edit Mode
+            </button>
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAllChangesBtn">
+                <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+            </button>
         </div>
     </div>
 
@@ -54,11 +68,11 @@ $today = date('Y-m-d');
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" id="examination_id" name="examination_id" value="">
 
-        <section class="clims-section" data-step="1" id="section1">
+        <section class="clims-section workflow-section d-none" data-step="1" id="section1">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-id-card"></i>Container 1 - Demographics</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="1">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Container 1
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Save Demographics
                 </button>
             </div>
 
@@ -113,7 +127,7 @@ $today = date('Y-m-d');
                 </div>
                 <div class="col-lg-3">
                     <label class="form-label">CLIMS ID / Gate Pass ID *</label>
-                    <input type="text" class="form-control" name="clims_id" id="clims_id" required>
+                    <input type="text" class="form-control" name="clims_id" id="clims_id" readonly>
                 </div>
                 <div class="col-lg-3">
                     <label class="form-label">NTPC EIC</label>
@@ -122,7 +136,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="2" id="section2">
+        <section class="clims-section workflow-section d-none" data-step="2" id="section2">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-file-signature"></i>Container 2 - History / Self Declaration</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="2">
@@ -174,7 +188,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="3" id="section3">
+        <section class="clims-section workflow-section d-none" data-step="3" id="section3">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-heart-pulse"></i>Container 3 - General Examination</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="3">
@@ -200,7 +214,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="4" id="section4">
+        <section class="clims-section workflow-section d-none" data-step="4" id="section4">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-stethoscope"></i>Container 4 - Systemic Examination</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="4">
@@ -216,7 +230,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="5" id="section5">
+        <section class="clims-section workflow-section d-none" data-step="5" id="section5">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-eye"></i>Container 5 - Vision</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="5">
@@ -242,11 +256,7 @@ $today = date('Y-m-d');
                     <tbody>
                         <tr>
                             <td class="fw-bold">Distant Vision</td>
-                            <td>
-                                <select class="form-select" name="distant_r_with" id="distant_r_with">
-                                    <option value="">Select</option><option>6/6</option><option>6/9</option><option>6/12</option><option>6/18</option><option>6/24</option><option>6/36</option><option>6/60</option>
-                                </select>
-                            </td>
+                            <td><select class="form-select" name="distant_r_with" id="distant_r_with"><option value="">Select</option><option>6/6</option><option>6/9</option><option>6/12</option><option>6/18</option><option>6/24</option><option>6/36</option><option>6/60</option></select></td>
                             <td><select class="form-select" name="distant_r_without" id="distant_r_without"><option value="">Select</option><option>6/6</option><option>6/9</option><option>6/12</option><option>6/18</option><option>6/24</option><option>6/36</option><option>6/60</option></select></td>
                             <td><select class="form-select" name="distant_l_with" id="distant_l_with"><option value="">Select</option><option>6/6</option><option>6/9</option><option>6/12</option><option>6/18</option><option>6/24</option><option>6/36</option><option>6/60</option></select></td>
                             <td><select class="form-select" name="distant_l_without" id="distant_l_without"><option value="">Select</option><option>6/6</option><option>6/9</option><option>6/12</option><option>6/18</option><option>6/24</option><option>6/36</option><option>6/60</option></select></td>
@@ -268,7 +278,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="6" id="section6">
+        <section class="clims-section workflow-section d-none" data-step="6" id="section6">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-venus"></i>Container 6 - For Female Workers</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="6">
@@ -283,7 +293,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="7" id="section7">
+        <section class="clims-section workflow-section d-none" data-step="7" id="section7">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-vials"></i>Container 7 - Investigations</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="7">
@@ -304,7 +314,7 @@ $today = date('Y-m-d');
             </div>
         </section>
 
-        <section class="clims-section" data-step="8" id="section8">
+        <section class="clims-section workflow-section d-none" data-step="8" id="section8">
             <div class="section-head">
                 <h2 class="section-title"><i class="fa-solid fa-notes-medical"></i>Container 8 - Opinion &amp; Remarks</h2>
                 <button type="button" class="btn btn-gradient btn-pill save-section-btn" data-step="8">
@@ -329,11 +339,11 @@ $today = date('Y-m-d');
         </section>
 
         <div class="footer-actions d-flex flex-wrap justify-content-center gap-2">
-            <button type="button" class="btn btn-gradient btn-pill" id="finalSubmitBtn" style="display:none;">
-                <i class="fa-solid fa-paper-plane me-1"></i>Submit Final &amp; Go To Form 26
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="submitForm26Btn">
+                <i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26
             </button>
-            <button type="button" class="btn btn-outline-soft" id="newRecordBtn">
-                <i class="fa-solid fa-plus me-1"></i>Start New Record
+            <button type="button" class="btn btn-outline-soft" id="resetWorkflowBtn">
+                <i class="fa-solid fa-rotate-right me-1"></i>Reset Screen
             </button>
         </div>
     </form>
