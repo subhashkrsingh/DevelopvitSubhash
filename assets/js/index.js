@@ -11,7 +11,7 @@
     const searchClimsInput = document.getElementById('search_clims_id');
     const searchStatus = document.getElementById('searchStatus');
     const refreshBtn = document.getElementById('refreshBtn');
-    const saveAllChangesBtn = document.getElementById('saveAllChangesBtn');
+    const saveAndOpenForm26Btn = document.getElementById('saveAndOpenForm26Btn');
     const submitForm26Btn = document.getElementById('submitForm26Btn');
 
     const statusChip = document.getElementById('recordStatus');

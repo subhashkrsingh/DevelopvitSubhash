@@ -425,8 +425,8 @@ $today = date('Y-m-d');
         </section>
 
         <div class="footer-actions d-flex flex-wrap justify-content-center gap-2">
-            <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAllChangesBtn">
-                <i class="fa-solid fa-floppy-disk me-1"></i>Save All Changes
+            <button type="button" class="btn btn-gradient btn-pill d-none" id="saveAndOpenForm26Btn">
+                <i class="fa-solid fa-paper-plane me-1"></i>Save and Open Form 26
             </button>
             <button type="button" class="btn btn-gradient btn-pill d-none" id="submitForm26Btn">
                 <i class="fa-solid fa-paper-plane me-1"></i>Submit to FORM 26
