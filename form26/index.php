@@ -62,77 +62,65 @@ $defaults = [
   <title>FORM-26 Certificate of Fitness</title>
 
   <!-- Bootstrap 5 -->
-   <link rel="stylesheet" href="assets/css/app.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../assets/css/app.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <style>
-    body {
-      background: #f4f6f9;
-      padding: 24px;
-      font-family: "Segoe UI", Roboto, sans-serif;
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
     }
-    .form-sheet {
-      background: #fff;
-      max-width: 850px;
-      margin: auto;
-      padding: 30px;
-      border-radius: 6px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    .loading-content {
+        background: white;
+        padding: 30px 50px;
+        border-radius: 30px;
+        text-align: center;
     }
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
+    .alert-fixed {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 300px;
+        animation: slideIn 0.3s ease-out;
     }
-.header img {
-        width: 100px;
-        height: auto;
-    }
-    .dotted-input {
-      border: none;
-      border-bottom: 2px dotted #555;
-      background: transparent;
-      outline: none;
-      padding: 4px 6px;
-      width: 100%;
-    }
-    textarea.dotted-input {
-      min-height: 50px;
-      resize: vertical;
-    }
-    .section-title {
-      font-weight: 600;
-      margin: 12px 0;
-    }
-    .signature-box {
-      border: 1px dashed #aaa;
-      min-height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border-radius: 6px;
-    }
-    .signature-box img {
-      max-height: 100px;
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    @media print {
-      body { background: white; }
-      .form-sheet { box-shadow: none; }
-      .btn, #uploadSignature { display: none !important; }
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
   </style>
 </head>
 <body>
 
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+        <p class="mt-3 fw-bold">Saving Form 26...</p>
+        <p class="text-muted small">Please wait</p>
+    </div>
+</div>
+
+<div id="alertContainer"></div>
+
 <div class="form-sheet">
   <!-- Header -->
-  <div class="d-flex justify-content-between">
+  <div class="d-flex justify-content-between align-items-center">
     <div>
-      <div style="width:110px;height:60px;border:1px solid #aaa;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#666;">
-        <img src="NTPC_Logo.svg.png" alt="NTPC Main Logo" width="160" height="60" >
+      <div style="width:110px;height:60px;border:1px solid #aaa;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#666;border-radius:12px;">
+        <img src="../NTPC_Logo.svg.png" alt="NTPC Main Logo" width="160" height="60" style="max-width:100%;height:auto;">
       </div>
     </div>
     <div class="header flex-grow-1">
@@ -145,8 +133,16 @@ $defaults = [
     </div>
   </div>
 
+  <!-- Error Message -->
+  <?php if ($error): ?>
+  <div class="alert alert-danger mt-3">
+    <i class="fas fa-exclamation-triangle me-2"></i> <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+    <br><a href="../index.php" class="btn btn-sm btn-primary mt-2">Go to Medical Examination Form</a>
+  </div>
+  <?php else: ?>
+
   <!-- Form -->
-  <form id="fitnessForm" class="mt-3" action="save_form.php" method="POST">
+  <form id="fitnessForm" class="mt-3" method="POST">
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="examination_id" value="<?php echo $examId; ?>">
     
@@ -179,7 +175,7 @@ $defaults = [
       and that his age, as nearly as can be from my examination, is  
       <input type="text" name="age" class="dotted-input" value="<?php echo htmlspecialchars($defaults['age'], ENT_QUOTES, 'UTF-8'); ?>"> 
       Years, and he is, in my 
-      <select name="fitness_status">
+      <select name="fitness_status" class="dotted-input" style="width: auto; min-width: 150px;">
         <option value="">Select</option>
         <option value="Fit" <?php echo ($defaults['fitness_status'] == 'Fit') ? 'selected' : ''; ?>>Fit</option>
         <option value="Unfit" <?php echo ($defaults['fitness_status'] == 'Unfit') ? 'selected' : ''; ?>>Unfit</option>
@@ -208,32 +204,47 @@ $defaults = [
         <div class="signature-box mt-2" id="signaturePreview">
           <span class="text-muted"><?php echo htmlspecialchars($defaults['surgeon_signature'] ?: 'No signature uploaded', ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
-        <input type="text" name="surgeon_signature" id="surgeon_signature" class="form-control mt-2" value="<?php echo htmlspecialchars($defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="text" name="surgeon_signature" id="surgeon_signature" class="form-control mt-2" placeholder="Enter signature" value="<?php echo htmlspecialchars($defaults['surgeon_signature'], ENT_QUOTES, 'UTF-8'); ?>">
       </div>
     </div>
 
     <div class="d-flex gap-2 justify-content-end mt-4">
       <button type="reset" class="btn btn-outline-secondary">Reset</button>
       <button type="button" id="previewBtn" class="btn btn-primary">Preview / Print</button>
-      <button type="submit" class="btn btn-success">Save</button>
+      <button type="button" id="saveBtn" class="btn btn-success">Save</button>
       <button type="button" id="nextBtn" class="btn btn-info">Next</button>
     </div>
   </form>
-
-  <div id="message" class="mt-3" style="display:none;"></div>
+  <?php endif; ?>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("fitnessForm");
-  const msg = document.getElementById("message");
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const alertContainer = document.getElementById('alertContainer');
+  const saveBtn = document.getElementById('saveBtn');
+  const nextBtn = document.getElementById('nextBtn');
 
-  // Form submit with AJAX
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show alert-fixed`;
+    alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    alertContainer.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+  }
+
+  // Save Form Data and Stay on Same Page
+  function saveFormData(redirectToNext = false) {
+    const fitnessStatus = document.querySelector('select[name="fitness_status"]').value;
+    if(!fitnessStatus) {
+        showAlert('Please select the fitness status.', 'danger');
+        return false;
+    }
+    
+    loadingOverlay.style.display = 'flex';
     
     const formData = new FormData(form);
     
@@ -241,37 +252,77 @@ document.addEventListener("DOMContentLoaded", () => {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('HTTP error ' + response.status);
+      }
+      return response.json();
+    })
     .then(data => {
+      loadingOverlay.style.display = 'none';
       if(data.success) {
-        alert('✅ ' + data.message);
+        showAlert('✅ ' + data.message, 'success');
+        
         // Update signature preview
         const surgeonSignature = document.getElementById('surgeon_signature').value;
         if(surgeonSignature) {
           document.getElementById('signaturePreview').innerHTML = '<span>' + surgeonSignature + '</span>';
         }
+        
+        // If redirect to next page is requested
+        if(redirectToNext) {
+          setTimeout(() => {
+            window.location.href = '../form27/index.php?examination_id=<?php echo $examId; ?>';
+          }, 1000);
+        }
+        return true;
       } else {
-        alert('❌ Error: ' + data.message);
+        showAlert('❌ Error: ' + data.message, 'danger');
+        return false;
       }
     })
     .catch(error => {
-      alert('Error: ' + error.message);
+      loadingOverlay.style.display = 'none';
+      console.error('Error:', error);
+      showAlert('Error: ' + error.message, 'danger');
+      return false;
     });
-  });
+    
+    return false;
+  }
+
+  // Save button - saves data and stays on page
+  if(saveBtn) {
+    saveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveFormData(false);
+    });
+  }
+
+  // Next button - saves data and redirects to Form 27
+  if(nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveFormData(true);
+    });
+  }
+
+  // Form submit handler (for Enter key)
+  if(form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveFormData(false);
+    });
+  }
 
   // Reset button clears preview
-  document.querySelector("button[type='reset']").addEventListener("click", () => {
+  document.querySelector("button[type='reset']")?.addEventListener("click", () => {
     document.getElementById("signaturePreview").innerHTML = 
       '<span class="text-muted">No signature uploaded</span>';
   });
 
-  // Next button (redirect to Form-27)
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    window.location.href = "../27/index.php";  
-  });
-
   // Preview button
-  document.getElementById("previewBtn").addEventListener("click", () => {
+  document.getElementById("previewBtn")?.addEventListener("click", () => {
     window.print();
   });
 });

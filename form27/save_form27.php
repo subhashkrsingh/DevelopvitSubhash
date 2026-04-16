@@ -1,65 +1,157 @@
 <?php
+// No spaces or any characters before <?php
+error_reporting(0);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
-
-if (ob_get_level() === 0) {
-    ob_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+
+// Clean all output buffers
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 require_once __DIR__ . '/../config.php';
 
+// Ensure no output before JSON
+ob_start();
+
+header('Content-Type: application/json');
+
+// Check if this is a POST request
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-    json_response(false, 'Invalid request method.', [], 405);
+    echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+    exit;
 }
 
-verify_csrf_or_exit($_POST['csrf_token'] ?? null);
+// Check CSRF token
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== csrf_token()) {
+    echo json_encode(['success' => false, 'message' => 'Invalid security token.']);
+    exit;
+}
 
-$examId = (int)($_POST['examination_id'] ?? 0);
+// Get examination ID
+$examId = isset($_POST['examination_id']) ? (int)$_POST['examination_id'] : 0;
 if ($examId <= 0) {
-    json_response(false, 'Invalid examination ID.');
+    echo json_encode(['success' => false, 'message' => 'Invalid examination ID.']);
+    exit;
 }
+
+// Check if this is an update or insert
+$recordId = isset($_POST['record_id']) ? (int)$_POST['record_id'] : 0;
+$isUpdate = ($recordId > 0);
 
 try {
     $pdo = pdo();
-
+    
+    // Verify examination exists
     $exam = get_medical_examination_by_id($pdo, $examId);
     if (!$exam) {
-        json_response(false, 'Examination record not found.');
+        echo json_encode(['success' => false, 'message' => 'Examination record not found.']);
+        exit;
     }
-
-    $payload = [
-        'serial_number' => normalize_string($_POST['serial_number'] ?? null),
-        'department' => normalize_string($_POST['department'] ?? null),
-        'name' => normalize_string($_POST['name'] ?? null),
-        'sex' => normalize_string($_POST['sex'] ?? null),
-        'age' => is_numeric((string)($_POST['age'] ?? '')) ? (int)$_POST['age'] : null,
-        'start_date' => normalize_string($_POST['start_date'] ?? null),
-        'leave_transfer' => normalize_string($_POST['leave_transfer'] ?? null),
-        'occupation' => normalize_string($_POST['occupation'] ?? null),
-        'raw_materials' => normalize_string($_POST['raw_materials'] ?? null),
-        'exam_date' => normalize_string($_POST['exam_date'] ?? null),
-        'result' => normalize_string($_POST['result'] ?? null),
-        'signs_symptoms' => normalize_string($_POST['signs_symptoms'] ?? null),
-        'tests_result' => normalize_string($_POST['tests_result'] ?? null),
-        'suspension_details' => normalize_string($_POST['suspension_details'] ?? null),
-        'certificate_issued' => normalize_string($_POST['certificate_issued'] ?? null),
-        'recertified_date' => normalize_string($_POST['recertified_date'] ?? null),
-        'surgeon_signature' => normalize_string($_POST['surgeon_signature'] ?? null),
+    
+    // Create table if not exists
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `form27` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `examination_id` int(11) NOT NULL,
+            `serial_number` varchar(100) DEFAULT NULL,
+            `department` varchar(255) DEFAULT NULL,
+            `name` varchar(255) DEFAULT NULL,
+            `sex` varchar(20) DEFAULT NULL,
+            `age` int(11) DEFAULT NULL,
+            `start_date` date DEFAULT NULL,
+            `leave_transfer` text,
+            `occupation` varchar(255) DEFAULT NULL,
+            `raw_materials` text,
+            `exam_date` date DEFAULT NULL,
+            `result` varchar(50) DEFAULT NULL,
+            `signs_symptoms` text,
+            `tests_result` text,
+            `suspension_details` text,
+            `certificate_issued` varchar(255) DEFAULT NULL,
+            `recertified_date` date DEFAULT NULL,
+            `surgeon_signature` varchar(255) DEFAULT NULL,
+            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `examination_id` (`examination_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    
+    // Prepare data
+    $data = [
+        'serial_number' => isset($_POST['serial_number']) ? trim($_POST['serial_number']) : null,
+        'department' => isset($_POST['department']) ? trim($_POST['department']) : null,
+        'name' => isset($_POST['name']) ? trim($_POST['name']) : null,
+        'sex' => isset($_POST['sex']) ? trim($_POST['sex']) : null,
+        'age' => isset($_POST['age']) && is_numeric($_POST['age']) ? (int)$_POST['age'] : null,
+        'start_date' => isset($_POST['start_date']) && !empty($_POST['start_date']) ? $_POST['start_date'] : null,
+        'leave_transfer' => isset($_POST['leave_transfer']) ? trim($_POST['leave_transfer']) : null,
+        'occupation' => isset($_POST['occupation']) ? trim($_POST['occupation']) : null,
+        'raw_materials' => isset($_POST['raw_materials']) ? trim($_POST['raw_materials']) : null,
+        'exam_date' => isset($_POST['exam_date']) && !empty($_POST['exam_date']) ? $_POST['exam_date'] : null,
+        'result' => isset($_POST['result']) ? trim($_POST['result']) : null,
+        'signs_symptoms' => isset($_POST['signs_symptoms']) ? trim($_POST['signs_symptoms']) : null,
+        'tests_result' => isset($_POST['tests_result']) ? trim($_POST['tests_result']) : null,
+        'suspension_details' => isset($_POST['suspension_details']) ? trim($_POST['suspension_details']) : null,
+        'certificate_issued' => isset($_POST['certificate_issued']) ? trim($_POST['certificate_issued']) : null,
+        'recertified_date' => isset($_POST['recertified_date']) && !empty($_POST['recertified_date']) ? $_POST['recertified_date'] : null,
+        'surgeon_signature' => isset($_POST['surgeon_signature']) ? trim($_POST['surgeon_signature']) : null,
     ];
-
+    
+    // Validate required fields
+    if (empty($data['name'])) {
+        echo json_encode(['success' => false, 'message' => 'Name of worker is required.']);
+        exit;
+    }
+    
+    // Validate date formats
     foreach (['start_date', 'exam_date', 'recertified_date'] as $dateField) {
-        if ($payload[$dateField] && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $payload[$dateField])) {
-            $payload[$dateField] = null;
+        if (!empty($data[$dateField]) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data[$dateField])) {
+            $data[$dateField] = null;
         }
     }
-
+    
     $pdo->beginTransaction();
-
-    $checkStmt = $pdo->prepare('SELECT id FROM form27 WHERE examination_id = :examination_id LIMIT 1');
-    $checkStmt->execute([':examination_id' => $examId]);
-    $existing = $checkStmt->fetch();
-
-    if ($existing) {
-        $updateStmt = $pdo->prepare(
-            'UPDATE form27 SET
+    
+    if ($isUpdate) {
+        // Update existing record
+        $sql = "UPDATE form27 SET 
+            serial_number = :serial_number,
+            department = :department,
+            name = :name,
+            sex = :sex,
+            age = :age,
+            start_date = :start_date,
+            leave_transfer = :leave_transfer,
+            occupation = :occupation,
+            raw_materials = :raw_materials,
+            exam_date = :exam_date,
+            result = :result,
+            signs_symptoms = :signs_symptoms,
+            tests_result = :tests_result,
+            suspension_details = :suspension_details,
+            certificate_issued = :certificate_issued,
+            recertified_date = :recertified_date,
+            surgeon_signature = :surgeon_signature
+            WHERE id = :id";
+        
+        $stmt = $pdo->prepare($sql);
+        $data['id'] = $recordId;
+        $result = $stmt->execute($data);
+        $savedId = $recordId;
+    } else {
+        // Check if record exists for this examination
+        $checkStmt = $pdo->prepare("SELECT id FROM form27 WHERE examination_id = :examination_id LIMIT 1");
+        $checkStmt->execute([':examination_id' => $examId]);
+        $existing = $checkStmt->fetch();
+        
+        if ($existing) {
+            // Update existing record
+            $sql = "UPDATE form27 SET 
                 serial_number = :serial_number,
                 department = :department,
                 name = :name,
@@ -77,82 +169,57 @@ try {
                 certificate_issued = :certificate_issued,
                 recertified_date = :recertified_date,
                 surgeon_signature = :surgeon_signature
-             WHERE examination_id = :examination_id'
-        );
-
-        $updateStmt->execute([
-            ':serial_number' => $payload['serial_number'],
-            ':department' => $payload['department'],
-            ':name' => $payload['name'],
-            ':sex' => $payload['sex'],
-            ':age' => $payload['age'],
-            ':start_date' => $payload['start_date'],
-            ':leave_transfer' => $payload['leave_transfer'],
-            ':occupation' => $payload['occupation'],
-            ':raw_materials' => $payload['raw_materials'],
-            ':exam_date' => $payload['exam_date'],
-            ':result' => $payload['result'],
-            ':signs_symptoms' => $payload['signs_symptoms'],
-            ':tests_result' => $payload['tests_result'],
-            ':suspension_details' => $payload['suspension_details'],
-            ':certificate_issued' => $payload['certificate_issued'],
-            ':recertified_date' => $payload['recertified_date'],
-            ':surgeon_signature' => $payload['surgeon_signature'],
-            ':examination_id' => $examId,
-        ]);
-
-        $form27Id = (int)$existing['id'];
-    } else {
-        $insertStmt = $pdo->prepare(
-            'INSERT INTO form27 (
-                examination_id, serial_number, department, name, sex, age, start_date,
-                leave_transfer, occupation, raw_materials, exam_date, result,
-                signs_symptoms, tests_result, suspension_details, certificate_issued,
-                recertified_date, surgeon_signature, created_at
-             ) VALUES (
-                :examination_id, :serial_number, :department, :name, :sex, :age, :start_date,
-                :leave_transfer, :occupation, :raw_materials, :exam_date, :result,
-                :signs_symptoms, :tests_result, :suspension_details, :certificate_issued,
-                :recertified_date, :surgeon_signature, NOW()
-             )'
-        );
-
-        $insertStmt->execute([
-            ':examination_id' => $examId,
-            ':serial_number' => $payload['serial_number'],
-            ':department' => $payload['department'],
-            ':name' => $payload['name'],
-            ':sex' => $payload['sex'],
-            ':age' => $payload['age'],
-            ':start_date' => $payload['start_date'],
-            ':leave_transfer' => $payload['leave_transfer'],
-            ':occupation' => $payload['occupation'],
-            ':raw_materials' => $payload['raw_materials'],
-            ':exam_date' => $payload['exam_date'],
-            ':result' => $payload['result'],
-            ':signs_symptoms' => $payload['signs_symptoms'],
-            ':tests_result' => $payload['tests_result'],
-            ':suspension_details' => $payload['suspension_details'],
-            ':certificate_issued' => $payload['certificate_issued'],
-            ':recertified_date' => $payload['recertified_date'],
-            ':surgeon_signature' => $payload['surgeon_signature'],
-        ]);
-
-        $form27Id = (int)$pdo->lastInsertId();
+                WHERE examination_id = :examination_id";
+            
+            $stmt = $pdo->prepare($sql);
+            $data['examination_id'] = $examId;
+            $result = $stmt->execute($data);
+            $savedId = $existing['id'];
+        } else {
+            // Insert new record
+            $sql = "INSERT INTO form27 (
+                examination_id, serial_number, department, name, sex, age, 
+                start_date, leave_transfer, occupation, raw_materials, 
+                exam_date, result, signs_symptoms, tests_result, 
+                suspension_details, certificate_issued, recertified_date, 
+                surgeon_signature, created_at
+            ) VALUES (
+                :examination_id, :serial_number, :department, :name, :sex, :age,
+                :start_date, :leave_transfer, :occupation, :raw_materials,
+                :exam_date, :result, :signs_symptoms, :tests_result,
+                :suspension_details, :certificate_issued, :recertified_date,
+                :surgeon_signature, NOW()
+            )";
+            
+            $stmt = $pdo->prepare($sql);
+            $data['examination_id'] = $examId;
+            $result = $stmt->execute($data);
+            $savedId = (int)$pdo->lastInsertId();
+        }
     }
-
-    $pdo->commit();
-
-    json_response(true, 'Form 27 saved successfully.', [
-        'id' => $form27Id,
-    ]);
+    
+    if ($result) {
+        $pdo->commit();
+        
+        // Clear any output buffers before sending JSON
+        ob_clean();
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => $isUpdate ? 'Form 27 updated successfully!' : 'Form 27 saved successfully!',
+            'id' => $savedId
+        ]);
+    } else {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Database error while saving.']);
+    }
+    
 } catch (Throwable $e) {
-    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+    if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-
-    json_response(false, 'Unable to save Form 27.', [
-        'error' => APP_DEBUG ? $e->getMessage() : null,
-    ], 500);
+    
+    error_log('Form27 Save Error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
-
+?>

@@ -1,7 +1,21 @@
 <?php
+// Disable error display to browser, log instead
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Check if session is already started before starting it
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../config.php';
 
-session_start();
+// Clear any output buffers
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 header('Content-Type: application/json');
 
 // Check CSRF token
@@ -46,6 +60,8 @@ try {
     $checkStmt = $pdo->prepare("SELECT id FROM form26 WHERE examination_id = :examination_id LIMIT 1");
     $checkStmt->execute([':examination_id' => $examination_id]);
     $exists = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $result = false;
     
     if ($exists) {
         // Update existing record
@@ -114,6 +130,7 @@ try {
     }
     
 } catch (Throwable $e) {
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    error_log('Form26 Save Error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
 ?>
